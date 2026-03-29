@@ -35,7 +35,7 @@ function Login() {
       setMensagem(dados.mensagem);
 
       if (dados.mensagem === "Login realizado com sucesso!") {
-        navigate("/home"); // 🚀 sem localStorage
+        navigate("/home"); //  sem localStorage
       }
 
     } catch (erro) {
