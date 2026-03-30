@@ -3,13 +3,13 @@ const cors = require("cors");
 const bcrypt = require("bcrypt");
 const { Pool } = require("pg");
 
-// 🔐 JWT e Cookies
+//  JWT e Cookies
 const jwt = require("jsonwebtoken");
 const cookieParser = require("cookie-parser");
 
 const app = express();
 
-// 🔥 CORS (necessário para cookies com React)
+// CORS (necessário para cookies com React)
 app.use(cors({
   origin: "http://localhost:3000",
   credentials: true
@@ -104,20 +104,20 @@ app.post("/login", async (req, res) => {
       return res.json({ mensagem: "Email ou senha inválidos!" });
     }
 
-    // ⏱️ tempo dinâmico
+    // tempo dinâmico
     const tempoToken = lembrar ? "24h" : "1m";
     const tempoCookie = lembrar
       ? 24 * 60 * 60 * 1000
       : 60 * 1000;
 
-    // 🔐 JWT
+    //  JWT
     const token = jwt.sign(
       { id: usuario.id, email: usuario.email },
       SECRET,
       { expiresIn: tempoToken }
     );
 
-    // 🍪 COOKIE
+    // COOKIE
     res.cookie("token", token, {
       httpOnly: true,
       secure: false,
@@ -134,7 +134,7 @@ app.post("/login", async (req, res) => {
 });
 
 
-// 🔒 ROTA PROTEGIDA
+// ROTA PROTEGIDA
 app.get("/home", autenticar, (req, res) => {
   res.json({
     mensagem: "Acesso permitido!",
@@ -143,14 +143,14 @@ app.get("/home", autenticar, (req, res) => {
 });
 
 
-// 🚪 LOGOUT
+// LOGOUT
 app.post("/logout", (req, res) => {
   res.clearCookie("token");
   res.json({ mensagem: "Logout realizado!" });
 });
 
 
-// 🚀 SERVER
+// SERVER
 app.listen(3001, () => {
   console.log("Servidor rodando em http://localhost:3001");
 });

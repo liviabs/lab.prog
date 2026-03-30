@@ -23,7 +23,7 @@ function Register() {
         headers: {
           "Content-Type": "application/json",
         },
-        credentials: "include", // 🔥 ADICIONADO
+        credentials: "include",
         body: JSON.stringify({ email, senha }),
       });
 

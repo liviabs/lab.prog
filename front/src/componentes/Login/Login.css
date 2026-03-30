@@ -85,7 +85,7 @@ p {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 1px;              /* menos espaço entre checkbox e texto */
+  gap: 1px;             
   margin-top: 10px;
   margin-bottom: 10px;
   cursor: pointer;
