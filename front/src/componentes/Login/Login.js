@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import "./style.css";
+import "./Login.css";
 
 function Login() {
   const [email, setEmail] = useState("");
@@ -35,7 +35,7 @@ function Login() {
       setMensagem(dados.mensagem);
 
       if (dados.mensagem === "Login realizado com sucesso!") {
-        navigate("/home"); //  sem localStorage
+        navigate("/home");
       }
 
     } catch (erro) {
@@ -47,7 +47,7 @@ function Login() {
 
   return (
     <div className="container">
-      <form onSubmit={entrar} className="card">
+      <form onSubmit={entrar} className="card animar">
         <h2>Login</h2>
 
         <input
@@ -68,16 +68,14 @@ function Login() {
           {carregando ? "Entrando..." : "Entrar"}
         </button>
 
-       <p className="link">
-          <label className="lembrar">
-            <input
-              type="checkbox"
-              checked={lembrar}
-              onChange={(e) => setLembrar(e.target.checked)}
-            />
-            Lembrar de mim
-          </label>
-        </p>
+        <label className="lembrar">
+          <input
+            type="checkbox"
+            checked={lembrar}
+            onChange={(e) => setLembrar(e.target.checked)}
+          />
+          Lembrar de mim
+        </label>
 
         <p className="link">
           Não tem conta? <Link to="/register">Cadastre-se</Link>

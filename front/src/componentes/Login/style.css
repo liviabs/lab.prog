@@ -13,16 +13,17 @@ body {
 }
 
 .card {
-  background: white;
+  background: #ffffff;
   padding: 40px;
-  border-radius: 20px;
-  width: 340px;
+  border-radius: 15px;
+  width: 320px;
+  box-shadow: 0px 8px 20px rgba(0,0,0,0.15);
   text-align: center;
-  box-shadow: 0px 10px 25px rgba(0,0,0,0.15);
-  animation: fadeIn 0.5s ease;
 }
 
-h1, h2 {
+h2 {
+  margin-bottom: 25px;
+  font-size: 26px;
   color: #d63384;
 }
 
@@ -31,7 +32,7 @@ input {
   padding: 12px;
   margin-bottom: 18px;
   border: 1px solid #f3c6d3;
-  border-radius: 10px;
+  border-radius: 8px;
   font-size: 15px;
 }
 
@@ -41,45 +42,74 @@ input:focus {
 }
 
 button {
-  width: 100%;
-  padding: 12px;
+  width: 70%;
+  padding: 10px;
   background: #ff85a2;
   color: white;
   border: none;
-  border-radius: 10px;
-  font-size: 16px;
+  border-radius: 8px;
+  font-size: 14px;
   cursor: pointer;
+  margin: 8px auto;
+  display: block;
   transition: 0.3s;
 }
 
 button:hover {
   background: #e06c8c;
+  transform: scale(1.05);
+}
+
+button:active {
+  transform: scale(0.97);
 }
 
 .link {
-  margin-top: 10px;
+  margin-top: 12px;
+  font-size: 15px;
 }
 
 .link a {
-  color: #d63384;
+  color: #ff85a2;
   text-decoration: none;
   font-weight: bold;
 }
 
-.link a:hover {
-  text-decoration: underline;
+.lembrar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 15px;
+  white-space: nowrap;
 }
 
-p {
-  margin-top: 12px;
-  font-size: 14px;
-  color: #555;
+.lembrar input {
+  margin: 0;
+  transform: scale(1.2);
 }
 
-@keyframes fadeIn {
+/* TEXTO HOME */
+.mensagem {
+  font-size: 18px;
+  margin-bottom: 20px;
+}
+
+/* TELA FINAL */
+.titulo-bemvindo {
+  font-size: 32px;
+  color: #d63384;
+}
+
+/* ANIMAÇÃO */
+.animar {
+  animation: subir 0.5s ease;
+}
+
+@keyframes subir {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(20px);
   }
   to {
     opacity: 1;

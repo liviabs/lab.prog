@@ -18,10 +18,10 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 
-// 🔐 segredo do token
+
 const SECRET = "segredo_super_forte";
 
-// 🔌 conexão com banco
+// conexão com banco
 const db = new Pool({
   user: "postgres",
   host: "localhost",
@@ -31,7 +31,7 @@ const db = new Pool({
 });
 
 
-// 🔐 MIDDLEWARE DE AUTENTICAÇÃO
+// MIDDLEWARE DE AUTENTICAÇÃO
 function autenticar(req, res, next) {
   const token = req.cookies.token;
 
@@ -49,7 +49,7 @@ function autenticar(req, res, next) {
 }
 
 
-// ✅ REGISTER
+// REGISTER
 app.post("/register", async (req, res) => {
   const { email, senha } = req.body;
 
@@ -69,12 +69,16 @@ app.post("/register", async (req, res) => {
 
   } catch (err) {
     console.log(err);
+    if (err.code === "23505") {
+      return res.json({ mensagem: "Usuário já cadastrado!" });
+    }
+
     res.json({ mensagem: "Erro ao cadastrar usuário!" });
   }
 });
 
 
-// ✅ LOGIN
+// LOGIN
 app.post("/login", async (req, res) => {
   const { email, senha, lembrar } = req.body;
 

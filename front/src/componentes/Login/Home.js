@@ -1,21 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./style.css";
 
 function Home() {
   const navigate = useNavigate();
-
-  const [mensagem, setMensagem] = useState("Você está logado no sistema");
-
-  // 🚪 logout
-  async function sair() {
-    await fetch("http://localhost:3001/logout", {
-      method: "POST",
-      credentials: "include",
-    });
-
-    navigate("/");
-  }
 
   // 🔒 verifica autenticação
   useEffect(() => {
@@ -32,17 +20,23 @@ function Home() {
       });
   }, [navigate]);
 
-  // ✅ botão permanecer logado
   function permanecerLogado() {
-    setMensagem("Bem-vindo ao sistema 🎉");
+    navigate("/bemvindo");
+  }
+
+  async function sair() {
+    await fetch("http://localhost:3001/logout", {
+      method: "POST",
+      credentials: "include",
+    });
+
+    navigate("/");
   }
 
   return (
     <div className="container">
-      <div className="card">
-        <h1>Bem-vindo 👋</h1>
-
-        <p>{mensagem}</p>
+      <div className="card animar">
+        <p className="mensagem">Você está logado no sistema!</p>
 
         <button onClick={permanecerLogado}>
           Permanecer logado

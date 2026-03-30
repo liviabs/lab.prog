@@ -81,17 +81,21 @@ p {
   text-decoration: underline;
 }
 
-/* lembrar de mim */
 .lembrar {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 1px;              /* menos espaço entre checkbox e texto */
+  margin-top: 10px;
+  margin-bottom: 10px;
   cursor: pointer;
+  font-size: 14px;
 }
 
+/* remove espaçamento padrão do input */
 .lembrar input[type="checkbox"] {
-  width: auto;      
-  height: auto;
   margin: 0;
+  padding: 0;
+  width: 14px;
+  height: 14px;
 }
