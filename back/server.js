@@ -1,4 +1,6 @@
 const express = require("express");
+const app = express();
+
 const cors = require("cors");
 const bcrypt = require("bcrypt");
 const { Pool } = require("pg");
@@ -6,8 +8,6 @@ const { Pool } = require("pg");
 //  JWT e Cookies
 const jwt = require("jsonwebtoken");
 const cookieParser = require("cookie-parser");
-
-const app = express();
 
 // CORS (necessário para cookies com React)
 app.use(cors({
@@ -18,6 +18,9 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 
+//MIDDLEWARE
+const autenticar = require("./auth");
+app.use(autenticar);
 
 const SECRET = "segredo_super_forte";
 
@@ -30,23 +33,6 @@ const db = new Pool({
   port: 5432,
 });
 
-
-// MIDDLEWARE DE AUTENTICAÇÃO
-function autenticar(req, res, next) {
-  const token = req.cookies.token;
-
-  if (!token) {
-    return res.status(401).json({ mensagem: "Não autorizado" });
-  }
-
-  try {
-    const decoded = jwt.verify(token, SECRET);
-    req.usuario = decoded;
-    next();
-  } catch (err) {
-    return res.status(401).json({ mensagem: "Token inválido ou expirado" });
-  }
-}
 
 
 // REGISTER
@@ -134,8 +120,17 @@ app.post("/login", async (req, res) => {
 });
 
 
+// VERIFICAR SE ESTÁ LOGADO
+app.get("/verificar", (req, res) => {
+  res.json({
+    logado: true,
+    usuario: req.usuario
+  });
+});
+
+
 // ROTA PROTEGIDA
-app.get("/home", autenticar, (req, res) => {
+app.get("/home", (req, res) => {
   res.json({
     mensagem: "Acesso permitido!",
     usuario: req.usuario
