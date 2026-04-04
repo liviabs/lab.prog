@@ -8,33 +8,34 @@ function Login() {
   const [mensagem, setMensagem] = useState("");
   const [carregando, setCarregando] = useState(false);
   const [lembrar, setLembrar] = useState(false);
-  const [verificando, setVerificando] = useState(true); // 🔥 novo
+  const [verificando, setVerificando] = useState(true);
 
   const navigate = useNavigate();
 
-  // 🔥 VERIFICA SE JÁ ESTÁ LOGADO
+  // VERIFICA SE JÁ ESTÁ LOGADO
   useEffect(() => {
     async function verificarLogin() {
       try {
         const res = await fetch("http://localhost:3001/verificar", {
-          method: "GET",
           credentials: "include",
         });
 
-        if (res.ok) {
-          navigate("/home"); // já logado
+        const data = await res.json();
+
+        if (data.logado) {
+          navigate("/home", { replace: true });
         } else {
           setVerificando(false);
         }
       } catch (erro) {
+        console.error("Erro ao verificar:", erro);
         setVerificando(false);
       }
     }
 
     verificarLogin();
-  }, []);
+  }, [navigate]);
 
-  // 🔥 EVITA MOSTRAR LOGIN ENQUANTO VERIFICA
   if (verificando) {
     return <h1>Carregando...</h1>;
   }
@@ -63,7 +64,7 @@ function Login() {
       setMensagem(dados.mensagem);
 
       if (dados.mensagem === "Login realizado com sucesso!") {
-        navigate("/home");
+        navigate("/home", { replace: true });
       }
 
     } catch (erro) {

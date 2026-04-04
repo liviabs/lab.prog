@@ -6,11 +6,12 @@ function PrivateRoute({ children }) {
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetch("http://localhost:3001/home", {
+    fetch("http://localhost:3001/verificar", {
       credentials: "include",
     })
-      .then((res) => {
-        if (res.ok) {
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.logado) {
           setAutorizado(true);
         } else {
           setAutorizado(false);
@@ -21,7 +22,7 @@ function PrivateRoute({ children }) {
         setAutorizado(false);
         navigate("/");
       });
-  }, [navigate]);
+}, [navigate]);
 
   if (autorizado === null) return <p>Carregando...</p>;
 

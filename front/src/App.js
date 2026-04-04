@@ -12,11 +12,12 @@ function App() {
     <BrowserRouter>
       <Routes>
 
-        {/* 🔓 rotas públicas */}
+        {/*  rotas públicas */}
         <Route path="/" element={<Login />} />
+         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
 
-        {/* 🔒 rota protegida HOME */}
+        {/*  rota protegida HOME */}
         <Route
           path="/home"
           element={
@@ -26,7 +27,7 @@ function App() {
           }
         />
 
-        {/* 🔒 nova rota protegida */}
+        {/*  nova rota protegida */}
         <Route
           path="/bemvindo"
           element={

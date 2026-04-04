@@ -3,7 +3,6 @@ const app = express();
 
 const cors = require("cors");
 const bcrypt = require("bcrypt");
-const { Pool } = require("pg");
 
 //  JWT e Cookies
 const jwt = require("jsonwebtoken");
@@ -24,22 +23,13 @@ app.use(autenticar);
 
 const SECRET = "segredo_super_forte";
 
-// conexão com banco
-const db = new Pool({
-  user: "postgres",
-  host: "localhost",
-  database: "Projeto_LabProg",
-  password: "12345",
-  port: 5432,
-});
-
-
+const db = require("./db");
 
 // REGISTER
 app.post("/register", async (req, res) => {
-  const { email, senha } = req.body;
+  const { nome, email, senha } = req.body;
 
-  if (!email || !senha) {
+  if (!nome || !email || !senha) {
     return res.json({ mensagem: "Preencha todos os campos!" });
   }
 
@@ -47,8 +37,8 @@ app.post("/register", async (req, res) => {
     const senhaCriptografada = await bcrypt.hash(senha, 10);
 
     await db.query(
-      "INSERT INTO usuarios (email, senha) VALUES ($1, $2)",
-      [email, senhaCriptografada]
+      "INSERT INTO usuarios (nome, email, senha) VALUES ($1, $2, $3)",
+      [nome, email, senhaCriptografada]
     );
 
     res.json({ mensagem: "Usuário cadastrado com sucesso!" });
@@ -74,8 +64,7 @@ app.post("/login", async (req, res) => {
 
   try {
     const result = await db.query(
-      "SELECT * FROM usuarios WHERE email = $1",
-      [email]
+      "SELECT * FROM usuarios WHERE email = $1",[email]
     );
 
     if (result.rows.length === 0) {
@@ -97,11 +86,11 @@ app.post("/login", async (req, res) => {
       : 60 * 1000;
 
     //  JWT
-    const token = jwt.sign(
-      { id: usuario.id, email: usuario.email },
-      SECRET,
-      { expiresIn: tempoToken }
-    );
+    const token = jwt.sign({ 
+      id: usuario.id, 
+      nome: usuario.nome, 
+      email: usuario.email 
+    }, SECRET, { expiresIn: tempoToken });
 
     // COOKIE
     res.cookie("token", token, {
@@ -119,15 +108,22 @@ app.post("/login", async (req, res) => {
   }
 });
 
-
 // VERIFICAR SE ESTÁ LOGADO
 app.get("/verificar", (req, res) => {
-  res.json({
-    logado: true,
-    usuario: req.usuario
-  });
-});
+  const token = req.cookies.token;
 
+  if (!token) {
+    return res.json({ logado: false, usuario: null });
+  }
+
+  try {
+    const decoded = jwt.verify(token, SECRET);
+    res.json({ logado: true, usuario: decoded });
+  } catch (err) {
+    res.clearCookie("token");
+    res.json({ logado: false, usuario: null });
+  }
+});
 
 // ROTA PROTEGIDA
 app.get("/home", (req, res) => {
@@ -137,13 +133,11 @@ app.get("/home", (req, res) => {
   });
 });
 
-
 // LOGOUT
 app.post("/logout", (req, res) => {
   res.clearCookie("token");
   res.json({ mensagem: "Logout realizado!" });
 });
-
 
 // SERVER
 app.listen(3001, () => {

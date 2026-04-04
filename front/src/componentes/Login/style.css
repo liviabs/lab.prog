@@ -27,10 +27,19 @@ h2 {
   color: #d63384;
 }
 
+.card {
+  background: #ffffff;
+  padding: 40px;
+  border-radius: 15px;
+  width: 340px; /* leve aumento */
+  box-shadow: 0px 8px 20px rgba(0,0,0,0.15);
+  text-align: center;
+}
+
 input {
   width: 100%;
   padding: 12px;
-  margin-bottom: 18px;
+  margin-bottom: 15px; /* um pouco menor para caber melhor */
   border: 1px solid #f3c6d3;
   border-radius: 8px;
   font-size: 15px;

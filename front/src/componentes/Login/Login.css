@@ -4,19 +4,25 @@ body {
   background: linear-gradient(135deg, #fbc2eb, #fcd5ce);
 }
 
+* {
+  box-sizing: border-box;
+}
+
 .container {
   width: 100%;
-  height: 100vh;
+  min-height: 100vh; 
   display: flex;
   justify-content: center;
   align-items: center;
+  padding: 20px; 
 }
 
 form {
   background: #ffffff;
   padding: 40px;
   border-radius: 15px;
-  width: 320px;
+  width: 90%;
+  max-width: 350px;
   box-shadow: 0px 8px 20px rgba(0,0,0,0.15);
   text-align: center;
 }
@@ -30,7 +36,7 @@ h2 {
 input {
   width: 100%;
   padding: 12px;
-  margin-bottom: 18px;
+  margin-bottom: 14px;
   border: 1px solid #f3c6d3;
   border-radius: 8px;
   font-size: 15px;
@@ -98,4 +104,27 @@ p {
   padding: 0;
   width: 14px;
   height: 14px;
+}
+
+h2 {
+  margin-bottom: 25px;
+  font-size: 26px;
+  color: #d63384;
+}
+
+/* 🔥 Responsividade */
+@media (max-width: 480px) {
+  h2 {
+    font-size: 22px;
+  }
+
+  input {
+    font-size: 14px;
+    padding: 10px;
+  }
+
+  button {
+    font-size: 14px;
+    padding: 10px;
+  }
 }

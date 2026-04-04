@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import "./style.css";
 
 function Register() {
+  const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [mensagem, setMensagem] = useState("");
@@ -12,7 +13,7 @@ function Register() {
   async function cadastrar(e) {
     e.preventDefault();
 
-    if (!email || !senha) {
+    if (!nome || !email || !senha) {
       setMensagem("Preencha todos os campos!");
       return;
     }
@@ -24,7 +25,7 @@ function Register() {
           "Content-Type": "application/json",
         },
         credentials: "include",
-        body: JSON.stringify({ email, senha }),
+        body: JSON.stringify({ nome, email, senha }),
       });
 
       const dados = await resposta.json();
@@ -43,8 +44,15 @@ function Register() {
 
   return (
     <div className="container">
-      <form onSubmit={cadastrar} className="card">
+      <form onSubmit={cadastrar} className="card animar">
         <h2>Cadastro</h2>
+
+        <input
+          type="text"
+          placeholder="Digite seu nome"
+          value={nome}
+          onChange={(e) => setNome(e.target.value)}
+        />
 
         <input
           type="email"

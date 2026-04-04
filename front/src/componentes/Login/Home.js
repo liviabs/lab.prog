@@ -5,19 +5,19 @@ import "./style.css";
 function Home() {
   const navigate = useNavigate();
 
-  // 🔒 verifica autenticação
+  // verifica autenticação
   useEffect(() => {
-    fetch("http://localhost:3001/home", {
+    fetch("http://localhost:3001/verificar", {
       credentials: "include",
     })
-      .then((res) => {
-        if (!res.ok) {
-          navigate("/");
-        }
-      })
-      .catch(() => {
-        navigate("/");
-      });
+    .then((res) => {
+      if (!res.ok) {
+        navigate("/login");
+      }
+    })
+    .catch(() => {
+      navigate("/");
+    });
   }, [navigate]);
 
   function permanecerLogado() {
