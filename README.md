@@ -1,7 +1,7 @@
- 🧾 CRUD com Autenticação (React + Node.js + PostgreSQL)
----
+# 🧾 CRUD com Autenticação (React + Node.js + PostgreSQL)
 
-## 📌 Descrição
+
+## 🧩 Descrição
 
 Este projeto é uma aplicação **full stack** que implementa um sistema de **CRUD (Create, Read, Update, Delete)** com autenticação de usuários.
 
@@ -10,31 +10,27 @@ Inicialmente desenvolvido com persistência em arquivo JSON, o sistema foi evolu
 A autenticação é realizada por meio de **JSON Web Tokens (JWT)**, garantindo segurança no controle de acesso às rotas protegidas.
 
 Após o login bem-sucedido, o usuário é redirecionado automaticamente para a **tela inicial da aplicação**, que se encontra em desenvolvimento.
+<br><br>
 
----
-
-## 🔹 Tecnologias Utilizadas
+## 🧩 Tecnologias Utilizadas
 
 ### Frontend
-
 * React
 * JavaScript
 * CSS
 
 ### Backend
-
 * Node.js
 * Express
 * JWT (JSON Web Token)
 * Bcrypt
 
 ### Banco de Dados
-
 * PostgreSQL
+<br><br>
 
----
 
-##🔹 Funcionalidades
+## 🧩 Funcionalidades
 
 *  Cadastro de usuários
 *  Login com validação de credenciais
@@ -44,10 +40,10 @@ Após o login bem-sucedido, o usuário é redirecionado automaticamente para a *
 *  Operações CRUD completas
 *  Integração com banco de dados PostgreSQL
 * ⚠️ Tela inicial em desenvolvimento
+<br><br>
 
----
 
-##🔹 Estrutura do Projeto
+## 🧩 Estrutura do Projeto
 
 ```bash
 ├── backend/
@@ -64,28 +60,22 @@ Após o login bem-sucedido, o usuário é redirecionado automaticamente para a *
 ├── .gitignore
 ├── README.md
 ```
+<br>
 
----
-
-## ⚙️ Como Executar o Projeto
+## 🧩 Como Executar o Projeto
 
 ### 🔹 Pré-requisitos
-
 * Node.js instalado
 * PostgreSQL instalado e configurado
 
----
 
 ### 🔹 1. Clone o repositório
-
 ```bash
 git clone https://github.com/seu-usuario/seu-repositorio.git
 ```
 
----
 
 ### 🔹 2. Acesse as pastas
-
 ```bash
 cd backend
 npm install
@@ -96,14 +86,12 @@ cd ../frontend
 npm install
 ```
 
----
 
 ### 🔹 3. Configure o banco de dados
 
 Crie um banco no PostgreSQL e configure as credenciais no arquivo `.env` do backend:
 
 
----
 
 ### 🔹 4. Execute o projeto
 
@@ -118,10 +106,9 @@ npm start
 ```bash
 npm start
 ```
+<br>
 
----
-
-## 🛡️Segurança
+## 🧩 Segurança
 
 * Senhas armazenadas com hash usando **Bcrypt**
 * Autenticação baseada em **JWT**
