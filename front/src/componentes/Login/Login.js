@@ -1,0 +1,130 @@
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { FaEye, FaEyeSlash } from "react-icons/fa"; 
+import "./Login.css";
+
+function Login() {
+  const [email, setEmail] = useState("");
+  const [senha, setSenha] = useState("");
+  const [mensagem, setMensagem] = useState("");
+  const [carregando, setCarregando] = useState(false);
+  const [lembrar, setLembrar] = useState(false);
+  const [verificando, setVerificando] = useState(true);
+  const [mostrarSenha, setMostrarSenha] = useState(false); 
+
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    async function verificarLogin() {
+      try {
+        const res = await fetch("http://localhost:3001/verificar", {
+          credentials: "include",
+        });
+
+        const data = await res.json();
+
+        if (data.logado) {
+          navigate("/home", { replace: true });
+        } else {
+          setVerificando(false);
+        }
+      } catch (erro) {
+        console.error("Erro ao verificar:", erro);
+        setVerificando(false);
+      }
+    }
+
+    verificarLogin();
+  }, [navigate]);
+
+  if (verificando) {
+    return <h1>Carregando...</h1>;
+  }
+
+  async function entrar(e) {
+    e.preventDefault();
+
+    if (!email || !senha) {
+      setMensagem("Preencha todos os campos!");
+      return;
+    }
+
+    setCarregando(true);
+
+    try {
+      const resposta = await fetch("http://localhost:3001/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({ email, senha, lembrar }),
+      });
+
+      const dados = await resposta.json();
+      setMensagem(dados.mensagem);
+
+      if (dados.mensagem === "Login realizado com sucesso!") {
+        navigate("/home", { replace: true });
+      }
+
+    } catch (erro) {
+      setMensagem("Erro ao conectar com o servidor!");
+    }
+
+    setCarregando(false);
+  }
+
+  return (
+    <div className="container">
+      <form onSubmit={entrar} className="card animar">
+        <h2>Login</h2>
+
+        <input
+          type="email"
+          placeholder="Digite seu email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
+
+        {/* CAMPO DE SENHA COM OLHO */}
+        <div className="input-senha">
+          <input
+            type={mostrarSenha ? "text" : "password"} 
+            placeholder="Digite sua senha"
+            value={senha}
+            onChange={(e) => setSenha(e.target.value)}
+          />
+
+          <span
+            className="icone-olho"
+            onClick={() => setMostrarSenha(!mostrarSenha)}
+          >
+            {mostrarSenha ? <FaEyeSlash /> : <FaEye />}
+          </span>
+        </div>
+
+        <button type="submit" disabled={carregando}>
+          {carregando ? "Entrando..." : "Entrar"}
+        </button>
+
+        <label className="lembrar">
+          <input
+            type="checkbox"
+            checked={lembrar}
+            onChange={(e) => setLembrar(e.target.checked)}
+          />
+          Lembrar de mim
+        </label>
+
+        <p className="link">
+          Não tem conta? <Link to="/register">Cadastre-se</Link>
+        </p>
+
+        <p>{mensagem}</p>
+      </form>
+    </div>
+  );
+}
+
+export default Login;
