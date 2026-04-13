@@ -1,4 +1,4 @@
-# 🧾 CRUD com Autenticação (React + Node.js + PostgreSQL)
+ 🧾 CRUD com Autenticação (React + Node.js + PostgreSQL)
 ---
 
 ## 📌 Descrição
