@@ -1,4 +1,5 @@
 # 🧾 CRUD com Autenticação (React + Node.js + PostgreSQL)
+---
 
 ## 📌 Descrição
 
@@ -12,7 +13,7 @@ Após o login bem-sucedido, o usuário é redirecionado automaticamente para a *
 
 ---
 
-##🔹 Tecnologias Utilizadas
+## 🔹 Tecnologias Utilizadas
 
 ### Frontend
 
