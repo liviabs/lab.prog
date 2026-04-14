@@ -1,46 +1,45 @@
-import { useState } from "react"; 
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { FaEye, FaEyeSlash } from "react-icons/fa"; // IMPORTANTE
-import "./style.css";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
+import API from "../../api";
 
 function Register() {
-  const [nome, setNome] = useState("");
-  const [email, setEmail] = useState("");
-  const [senha, setSenha] = useState("");
-  const [mensagem, setMensagem] = useState("");
-  const [mostrarSenha, setMostrarSenha] = useState(false); // NOVO
+  const [nome, setNome]             = useState("");
+  const [email, setEmail]           = useState("");
+  const [senha, setSenha]           = useState("");
+  const [mensagem, setMensagem]     = useState("");
+  const [carregando, setCarregando] = useState(false);
+  const [mostrarSenha, setMostrarSenha] = useState(false);
 
   const navigate = useNavigate();
 
   async function cadastrar(e) {
     e.preventDefault();
+    setMensagem("");
 
     if (!nome || !email || !senha) {
       setMensagem("Preencha todos os campos!");
       return;
     }
 
+    setCarregando(true);
     try {
-      const resposta = await fetch("http://localhost:3001/register", {
+      const resposta = await fetch(`${API}/register`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({ nome, email, senha }),
       });
-
       const dados = await resposta.json();
       setMensagem(dados.mensagem);
 
-      if (dados.mensagem.includes("sucesso")) {
-        setTimeout(() => {
-          navigate("/");
-        }, 1500);
+      if (resposta.ok) {
+        setTimeout(() => navigate("/"), 1500);
       }
-
-    } catch (erro) {
-      setMensagem("Erro ao conectar com o servidor!");
+    } catch {
+      setMensagem("Erro ao conectar com o servidor.");
+    } finally {
+      setCarregando(false);
     }
   }
 
@@ -54,13 +53,15 @@ function Register() {
           placeholder="Digite seu nome"
           value={nome}
           onChange={(e) => setNome(e.target.value)}
+          autoComplete="name"
         />
 
         <input
           type="email"
-          placeholder="Digite seu email"
+          placeholder="Digite seu e-mail"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          autoComplete="email"
         />
 
         <div className="input-senha">
@@ -69,23 +70,26 @@ function Register() {
             placeholder="Digite sua senha"
             value={senha}
             onChange={(e) => setSenha(e.target.value)}
+            autoComplete="new-password"
           />
-
           <span
             className="icone-olho"
-            onClick={() => setMostrarSenha(!mostrarSenha)}
+            onClick={() => setMostrarSenha((v) => !v)}
+            aria-label={mostrarSenha ? "Ocultar senha" : "Mostrar senha"}
           >
             {mostrarSenha ? <FaEyeSlash /> : <FaEye />}
           </span>
         </div>
 
-        <button type="submit">Cadastrar</button>
+        <button type="submit" disabled={carregando}>
+          {carregando ? "Cadastrando..." : "Cadastrar"}
+        </button>
+
+        {mensagem && <p className="mensagem-erro">{mensagem}</p>}
 
         <p className="link">
           Já tem conta? <Link to="/">Entrar</Link>
         </p>
-
-        <p>{mensagem}</p>
       </form>
     </div>
   );

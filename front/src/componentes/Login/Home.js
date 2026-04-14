@@ -1,50 +1,23 @@
-import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import "./style.css";
+import API from "../../api";
 
 function Home() {
   const navigate = useNavigate();
 
-  // verifica autenticação
-  useEffect(() => {
-    fetch("http://localhost:3001/verificar", {
-      credentials: "include",
-    })
-    .then((res) => {
-      if (!res.ok) {
-        navigate("/login");
-      }
-    })
-    .catch(() => {
-      navigate("/");
-    });
-  }, [navigate]);
-
-  function permanecerLogado() {
-    navigate("/bemvindo");
-  }
-
   async function sair() {
-    await fetch("http://localhost:3001/logout", {
+    await fetch(`${API}/logout`, {
       method: "POST",
       credentials: "include",
     });
-
-    navigate("/");
+    navigate("/", { replace: true });
   }
 
   return (
     <div className="container">
       <div className="card animar">
         <p className="mensagem">Você está logado no sistema!</p>
-
-        <button onClick={permanecerLogado}>
-          Permanecer logado
-        </button>
-
-        <button onClick={sair}>
-          Sair
-        </button>
+        <button onClick={() => navigate("/bemvindo")}>Continuar</button>
+        <button onClick={sair}>Sair</button>
       </div>
     </div>
   );

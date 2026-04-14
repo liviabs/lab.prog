@@ -1,11 +1,14 @@
 const { Pool } = require("pg");
 
 const db = new Pool({
-  user: "postgres",
-  host: "localhost",
-  database: "Projeto_LabProg",
-  password: "123456",
-  port: 5432,
+  connectionString: process.env.DATABASE_URL,
 });
+
+db.connect()
+  .then(() => console.log("Banco de dados conectado"))
+  .catch((err) => {
+    console.error("Erro ao conectar ao banco:", err.message);
+    process.exit(1);
+  });
 
 module.exports = db;

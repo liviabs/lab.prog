@@ -1,30 +1,27 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import API from "./api";
 
 function PrivateRoute({ children }) {
   const [autorizado, setAutorizado] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetch("http://localhost:3001/verificar", {
-      credentials: "include",
-    })
+    fetch(`${API}/verificar`, { credentials: "include" })
       .then((res) => res.json())
       .then((data) => {
         if (data.logado) {
           setAutorizado(true);
         } else {
-          setAutorizado(false);
-          navigate("/");
+          navigate("/", { replace: true });
         }
       })
-      .catch(() => {
-        setAutorizado(false);
-        navigate("/");
-      });
-}, [navigate]);
+      .catch(() => navigate("/", { replace: true }));
+  }, [navigate]);
 
-  if (autorizado === null) return <p>Carregando...</p>;
+  if (autorizado === null) {
+    return <div className="container"><p>Carregando...</p></div>;
+  }
 
   return autorizado ? children : null;
 }

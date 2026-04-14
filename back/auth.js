@@ -1,17 +1,11 @@
 const jwt = require("jsonwebtoken");
-
-const SECRET = "segredo_super_forte";
-
+const { JWT_SECRET } = require("./config");
 const db = require("./db");
 
-async function autenticar(req, res, next) {
+const ROTAS_PUBLICAS = ["/login", "/register", "/verificar"];
 
-  // rotas públicas (NÃO validam token)
-  if (
-    req.path === "/login" ||
-    req.path === "/register" ||
-    req.path === "/verificar"
-  ) {
+async function autenticar(req, res, next) {
+  if (ROTAS_PUBLICAS.includes(req.path)) {
     return next();
   }
 
@@ -22,10 +16,11 @@ async function autenticar(req, res, next) {
   }
 
   try {
-    const decoded = jwt.verify(token, SECRET);
+    const decoded = jwt.verify(token, JWT_SECRET);
 
     const result = await db.query(
-      "SELECT id, nome, email FROM usuarios WHERE id = $1",[decoded.id]
+      "SELECT id, nome, email FROM usuarios WHERE id = $1",
+      [decoded.id]
     );
 
     if (result.rows.length === 0) {
@@ -33,9 +28,7 @@ async function autenticar(req, res, next) {
     }
 
     req.usuario = result.rows[0];
-
     next();
-
   } catch (err) {
     return res.status(401).json({ mensagem: "Token inválido ou expirado" });
   }
