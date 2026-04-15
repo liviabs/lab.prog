@@ -24,7 +24,7 @@ app.use(cookieParser());
 // ── Rate limiting ─────────────────────────────────────────────
 const limiterAuth = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 20,
+  max: 2,
   message: { mensagem: "Muitas tentativas. Tente novamente em 15 minutos." },
   standardHeaders: true,
   legacyHeaders: false,
@@ -147,6 +147,66 @@ app.get("/home", (req, res) => {
 app.post("/logout", (req, res) => {
   res.clearCookie("token");
   res.json({ mensagem: "Logout realizado!" });
+});
+
+// LISTAR CATEGORIAS DISPONÍVEIS
+app.get("/categorias", async (req, res) => {
+  try {
+    const result = await db.query(
+      "SELECT DISTINCT categoria FROM produtos ORDER BY categoria"
+    );
+    const categorias = result.rows.map((r) => r.categoria);
+    res.json({ categorias });
+  } catch (err) {
+    console.error("Erro ao buscar categorias:", err.message);
+    res.status(500).json({ mensagem: "Erro ao buscar categorias." });
+  }
+});
+
+// LISTAR PRODUTOS (com filtro opcional por categoria e busca por nome)
+app.get("/produtos", async (req, res) => {
+  const { categorias, busca } = req.query;
+
+  try {
+    let query  = "SELECT * FROM produtos WHERE 1=1";
+    const params = [];
+
+    if (categorias) {
+      const lista = categorias.split(",");
+      params.push(lista);
+      query += ` AND categoria = ANY($${params.length})`;
+    }
+
+    if (busca) {
+      params.push(`%${busca}%`);
+      query += ` AND nome ILIKE $${params.length}`;
+    }
+
+    query += " ORDER BY criado_em DESC";
+
+    const result = await db.query(query, params);
+    res.json({ produtos: result.rows });
+  } catch (err) {
+    console.error("Erro ao buscar produtos:", err.message);
+    res.status(500).json({ mensagem: "Erro ao buscar produtos." });
+  }
+});
+
+// BUSCAR UM PRODUTO POR ID
+app.get("/produtos/:id", async (req, res) => {
+  const { id } = req.params;
+  try {
+    const result = await db.query(
+      "SELECT * FROM produtos WHERE id = $1", [id]
+    );
+    if (result.rows.length === 0) {
+      return res.status(404).json({ mensagem: "Produto não encontrado." });
+    }
+    res.json({ produto: result.rows[0] });
+  } catch (err) {
+    console.error("Erro ao buscar produto:", err.message);
+    res.status(500).json({ mensagem: "Erro ao buscar produto." });
+  }
 });
 
 // ── Inicialização ─────────────────────────────────────────────
