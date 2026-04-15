@@ -1,0 +1,165 @@
+.produtos-pagina {
+  min-height: 100vh;
+  background: #f5f5f5;
+  font-family: Arial, sans-serif;
+}
+
+/* TOPO */
+.produtos-topo {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 24px;
+  background: #fff;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  flex-wrap: wrap;
+}
+
+.produtos-topo h2 {
+  margin: 0;
+  font-size: 20px;
+  color: #d63384;
+  flex: 1;
+}
+
+.btn-voltar {
+  background: transparent;
+  border: 1px solid #f3c6d3;
+  color: #d63384;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  width: auto;
+  transition: background 0.2s;
+}
+
+.btn-voltar:hover { background: #fdf0f5; transform: none; }
+
+.produtos-busca {
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: 1px solid #f3c6d3;
+  font-size: 14px;
+  width: 220px;
+  margin: 0;
+}
+
+/* CATEGORIAS (LISTA COM CHECKBOX) */
+.categorias-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 24px;
+  background: #fff;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.cat-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  color: #333;
+  cursor: pointer;
+}
+
+.cat-checkbox input {
+  display: none;
+}
+
+.checkmark {
+  font-size: 18px;
+}
+
+/* GRID */
+.produtos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 20px;
+  padding: 24px;
+}
+
+.produto-card {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s;
+  cursor: pointer;
+}
+
+.produto-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.12);
+}
+
+.produto-imagem {
+  width: 100%;
+  height: 180px;
+  background: #fdf0f5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.produto-imagem img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.produto-sem-imagem { font-size: 64px; }
+
+.produto-info { padding: 14px; }
+
+.produto-categoria {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: #ff85a2;
+  font-weight: bold;
+  letter-spacing: 0.05em;
+}
+
+.produto-nome {
+  margin: 6px 0 4px;
+  font-size: 15px;
+  color: #333;
+}
+
+.produto-descricao {
+  font-size: 13px;
+  color: #777;
+  margin: 0 0 12px;
+  line-height: 1.4;
+}
+
+.produto-rodape {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.produto-preco {
+  font-size: 16px;
+  font-weight: bold;
+  color: #d63384;
+}
+
+.produto-estoque {
+  font-size: 11px;
+  color: #999;
+}
+
+.produtos-status {
+  text-align: center;
+  margin-top: 60px;
+  color: #999;
+  font-size: 16px;
+}
+
+@media (max-width: 480px) {
+  .produtos-grid { grid-template-columns: 1fr; padding: 16px; }
+  .produtos-busca { width: 100%; }
+}
