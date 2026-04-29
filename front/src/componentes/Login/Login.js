@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { FaEye, FaEyeSlash } from "react-icons/fa";
-import API from "../../api";
+import { FaEnvelope, FaLock, FaEye, FaEyeSlash } from "react-icons/fa";
+import { apiFetch } from "../../api";
 
 function Login() {
   const [email, setEmail]             = useState("");
@@ -15,10 +15,10 @@ function Login() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetch(`${API}/verificar`, { credentials: "include" })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.logado) navigate("/home", { replace: true });
+    apiFetch("/verificar")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.logado) navigate("/bemvindo", { replace: true });
         else setVerificando(false);
       })
       .catch(() => setVerificando(false));
@@ -27,87 +27,87 @@ function Login() {
   async function entrar(e) {
     e.preventDefault();
     setMensagem("");
-
-    if (!email || !senha) {
-      setMensagem("Preencha todos os campos!");
-      return;
-    }
-
+    if (!email || !senha) { setMensagem("Preencha todos os campos."); return; }
     setCarregando(true);
     try {
-      const resposta = await fetch(`${API}/login`, {
+      const r = await apiFetch("/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials: "include",
         body: JSON.stringify({ email, senha, lembrar }),
       });
-      const dados = await resposta.json();
-
-      if (resposta.ok) {
-        navigate("/home", { replace: true });
-      } else {
-        setMensagem(dados.mensagem);
-      }
-    } catch {
-      setMensagem("Erro ao conectar com o servidor.");
+      const d = await r.json();
+      if (r.ok) navigate("/bemvindo", { replace: true });
+      else setMensagem(d.mensagem || "Credenciais inválidas.");
+    } catch (err) {
+      setMensagem(err.message);
     } finally {
       setCarregando(false);
     }
   }
 
-  if (verificando) {
-    return <div className="container"><p>Carregando...</p></div>;
-  }
+  if (verificando) return (
+    <div className="page-loading">
+      <div className="big-spinner" />
+      <span>Verificando sessão...</span>
+    </div>
+  );
 
   return (
-    <div className="container">
-      <form onSubmit={entrar} className="card animar">
-        <h2>Login</h2>
-
-        <input
-          type="email"
-          placeholder="Digite seu e-mail"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          autoComplete="email"
-        />
-
-        <div className="input-senha">
-          <input
-            type={mostrarSenha ? "text" : "password"}
-            placeholder="Digite sua senha"
-            value={senha}
-            onChange={(e) => setSenha(e.target.value)}
-            autoComplete="current-password"
-          />
-          <span
-            className="icone-olho"
-            onClick={() => setMostrarSenha((v) => !v)}
-            aria-label={mostrarSenha ? "Ocultar senha" : "Mostrar senha"}
-          >
-            {mostrarSenha ? <FaEyeSlash /> : <FaEye />}
-          </span>
+    <div className="auth-bg">
+      <div className="auth-card">
+        <div className="auth-logo">
+          <div className="auth-logo-icon">🛍️</div>
+          <span className="auth-logo-text">StoreApp</span>
         </div>
 
-        <button type="submit" disabled={carregando}>
-          {carregando ? "Entrando..." : "Entrar"}
-        </button>
+        <h1 className="auth-title">Bem-vindo de volta</h1>
+        <p className="auth-subtitle">Entre com suas credenciais para continuar</p>
 
-        <label className="lembrar">
-          <input
-            type="checkbox"
-            checked={lembrar}
-            onChange={(e) => setLembrar(e.target.checked)}
-          />
-          Lembrar de mim
-        </label>
+        <form onSubmit={entrar}>
+          <div className="field">
+            <label>E-mail</label>
+            <div className="field-input-wrap">
+              <FaEnvelope className="field-icon" />
+              <input
+                type="email" placeholder="seu@email.com"
+                value={email} onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
+              />
+            </div>
+          </div>
 
-        {mensagem && <p className="mensagem-erro">{mensagem}</p>}
+          <div className="field">
+            <label>Senha</label>
+            <div className="field-input-wrap">
+              <FaLock className="field-icon" />
+              <input
+                type={mostrarSenha ? "text" : "password"} placeholder="••••••••"
+                value={senha} onChange={(e) => setSenha(e.target.value)}
+                autoComplete="current-password"
+                style={{ paddingRight: "42px" }}
+              />
+              <button type="button" className="eye-btn" onClick={() => setMostrarSenha(v => !v)}>
+                {mostrarSenha ? <FaEyeSlash /> : <FaEye />}
+              </button>
+            </div>
+          </div>
 
-        <p className="link">
-          Não tem conta? <Link to="/register">Cadastre-se</Link>
+          <label className="check-label">
+            <input type="checkbox" checked={lembrar} onChange={(e) => setLembrar(e.target.checked)} />
+            Lembrar de mim por 24 horas
+          </label>
+
+          {mensagem && <div className="alert alert-error">⚠️ {mensagem}</div>}
+
+          <button type="submit" className="btn btn-primary" disabled={carregando}>
+            {carregando ? <><span className="spinner" /> Entrando...</> : "Entrar →"}
+          </button>
+        </form>
+
+        <p className="auth-footer">
+          Não tem conta? <Link to="/register">Criar conta grátis</Link>
         </p>
-      </form>
+      </div>
     </div>
   );
 }

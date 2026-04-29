@@ -1,27 +1,37 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import API from "./api";
+import { apiFetch } from "./api";
 
 function PrivateRoute({ children }) {
   const [autorizado, setAutorizado] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetch(`${API}/verificar`, { credentials: "include" })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.logado) {
-          setAutorizado(true);
-        } else {
-          navigate("/", { replace: true });
-        }
+    apiFetch("/verificar")
+      .then(r => r.json())
+      .then(d => {
+        if (d.logado) setAutorizado(true);
+        else { setAutorizado(false); navigate("/", { replace: true }); }
       })
-      .catch(() => navigate("/", { replace: true }));
+      .catch(() => { setAutorizado(false); navigate("/", { replace: true }); });
   }, [navigate]);
 
-  if (autorizado === null) {
-    return <div className="container"><p>Carregando...</p></div>;
-  }
+  useEffect(() => {
+    const id = setInterval(() => {
+      apiFetch("/verificar")
+        .then(r => r.json())
+        .then(d => { if (!d.logado) navigate("/", { replace: true }); })
+        .catch(() => {});
+    }, 30000);
+    return () => clearInterval(id);
+  }, [navigate]);
+
+  if (autorizado === null) return (
+    <div className="page-loading">
+      <div className="big-spinner" />
+      <span>Verificando sessão...</span>
+    </div>
+  );
 
   return autorizado ? children : null;
 }
