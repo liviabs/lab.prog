@@ -5,32 +5,27 @@ import Register from "./componentes/Login/Register";
 import Home     from "./componentes/Login/Home";
 import BemVindo from "./componentes/Login/BemVindo";
 import Produtos from "./componentes/Produtos/Produtos";
+import Perfil   from "./componentes/Perfil/Perfil";
 
-import PrivateRoute from "./PrivateRoute";
+import PrivateRoute      from "./PrivateRoute";
+import { ToastProvider } from "./ToastContext";
 import "./componentes/Login/globals.css";
 
 function App() {
   return (
     <BrowserRouter>
-      <Routes>
+      <ToastProvider>
+        <Routes>
+          <Route path="/"         element={<Login />} />
+          <Route path="/login"    element={<Login />} />
+          <Route path="/register" element={<Register />} />
 
-        {/* Únicas páginas acessíveis sem login */}
-        <Route path="/"         element={<Login />} />
-        <Route path="/login"    element={<Login />} />
-        <Route path="/register" element={<Register />} />
-
-        {/* Tudo abaixo exige token válido */}
-        <Route path="/home" element={
-          <PrivateRoute><Home /></PrivateRoute>
-        } />
-        <Route path="/bemvindo" element={
-          <PrivateRoute><BemVindo /></PrivateRoute>
-        } />
-        <Route path="/produtos" element={
-          <PrivateRoute><Produtos /></PrivateRoute>
-        } />
-
-      </Routes>
+          <Route path="/home"     element={<PrivateRoute><Home /></PrivateRoute>} />
+          <Route path="/bemvindo" element={<PrivateRoute><BemVindo /></PrivateRoute>} />
+          <Route path="/produtos" element={<PrivateRoute><Produtos /></PrivateRoute>} />
+          <Route path="/perfil"   element={<PrivateRoute><Perfil /></PrivateRoute>} />
+        </Routes>
+      </ToastProvider>
     </BrowserRouter>
   );
 }
