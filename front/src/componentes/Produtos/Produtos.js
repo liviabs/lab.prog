@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import {
   FaPlus, FaSearch, FaEdit, FaTrash, FaTh, FaList,
   FaTimes, FaBoxOpen, FaStore, FaBox, FaChevronLeft, FaChevronRight,
-  FaCloudUploadAlt, FaChevronDown, FaChevronUp
+  FaCloudUploadAlt, FaCommentDots, FaChevronDown,
 } from "react-icons/fa";
 import AppLayout from "../../AppLayout";
 import { useToast } from "../../ToastContext";
@@ -12,20 +12,17 @@ import { apiFetch } from "../../api";
 const ICONES = {
   roupas: "👕", moveis: "🛋️", automoveis: "🚗", sapatos: "👟",
   animais: "🐾", eletronicos: "💻", eletrodomesticos: "🏠", esportes: "🚴",
-  comida: "🍔", outros: "📦",
 };
 
 const BADGE_CAT = {
   roupas: "badge-pink", moveis: "badge-blue", automoveis: "badge-orange",
   sapatos: "badge-pink", animais: "badge-green", eletronicos: "badge-blue",
   eletrodomesticos: "badge-gray", esportes: "badge-green",
-  comida: "badge-orange", outros: "badge-gray",
 };
 
 const CATEGORIAS_DISPONIVEIS = [
   "roupas", "moveis", "automoveis", "sapatos",
   "animais", "eletronicos", "eletrodomesticos", "esportes",
-  "comida", "outros",
 ];
 
 const PRODUTO_VAZIO = {
@@ -92,11 +89,7 @@ function Carrossel({ imagens, fallback, altura = "100%", estilo = {} }) {
 
   return (
     <div style={{ position: "relative", width: "100%", height: altura, overflow: "hidden", userSelect: "none", ...estilo }}>
-      <img
-        src={imagens[idx]}
-        alt=""
-        style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
-      />
+      <img src={imagens[idx]} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
       {imagens.length > 1 && (
         <>
           <button onClick={prev} style={{ position: "absolute", left: 4, top: "50%", transform: "translateY(-50%)", background: "rgba(0,0,0,0.45)", border: "none", borderRadius: "50%", width: 26, height: 26, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", cursor: "pointer", padding: 0, fontSize: 11, zIndex: 2, backdropFilter: "blur(4px)" }}>
@@ -119,7 +112,9 @@ function Carrossel({ imagens, fallback, altura = "100%", estilo = {} }) {
   );
 }
 
-// ─── Upload de Fotos ──────────────────────────────────────────
+// ─── Upload de Fotos (dentro do modal) ────────────────────────
+// CORREÇÃO 1: mover() apenas atualiza o estado local — não salva automaticamente.
+// O salvamento só ocorre quando o usuário clica em "Salvar alterações" no formulário.
 function UploadFotos({ imagens, onChange }) {
   const inputRef = useRef(null);
   const [processando, setProcessando] = useState(false);
@@ -128,21 +123,32 @@ function UploadFotos({ imagens, onChange }) {
   async function handleFiles(e) {
     const arquivos = Array.from(e.target.files);
     if (!arquivos.length) return;
+
     const slots = MAX_IMAGES - imagens.length;
     if (slots <= 0) { setErro(`Máximo de ${MAX_IMAGES} fotos atingido.`); return; }
+
     const selecionados = arquivos.slice(0, slots);
     const grandes = selecionados.filter(f => f.size > MAX_FILE_SIZE_MB * 1024 * 1024);
     if (grandes.length) { setErro(`Arquivos muito grandes (máx. ${MAX_FILE_SIZE_MB}MB por foto).`); return; }
+
     setErro("");
     setProcessando(true);
     try {
       const novos = await Promise.all(selecionados.map(redimensionarImagem));
       onChange([...imagens, ...novos]);
-    } catch { setErro("Erro ao processar imagem. Tente outro arquivo."); }
-    finally { setProcessando(false); if (inputRef.current) inputRef.current.value = ""; }
+    } catch {
+      setErro("Erro ao processar imagem. Tente outro arquivo.");
+    } finally {
+      setProcessando(false);
+      if (inputRef.current) inputRef.current.value = "";
+    }
   }
 
-  function remover(i) { onChange(imagens.filter((_, idx) => idx !== i)); }
+  function remover(i) {
+    onChange(imagens.filter((_, idx) => idx !== i));
+  }
+
+  // Apenas reordena localmente — NÃO dispara nenhum save/close
   function mover(de, para) {
     const arr = [...imagens];
     const [item] = arr.splice(de, 1);
@@ -158,13 +164,19 @@ function UploadFotos({ imagens, onChange }) {
             <div key={i} style={{ position: "relative", width: 72, height: 72, borderRadius: 8, overflow: "hidden", border: i === 0 ? "2px solid var(--accent)" : "2px solid var(--border)", flexShrink: 0 }}>
               <img src={src} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
               {i === 0 && (
-                <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "var(--accent)", color: "#fff", fontSize: 9, textAlign: "center", fontWeight: 700, padding: "2px 0" }}>CAPA</div>
+                <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "var(--accent)", color: "#fff", fontSize: 9, textAlign: "center", fontWeight: 700, padding: "2px 0" }}>
+                  CAPA
+                </div>
               )}
-              <button onClick={() => remover(i)} style={{ position: "absolute", top: 2, right: 2, background: "rgba(0,0,0,0.6)", border: "none", borderRadius: "50%", width: 18, height: 18, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", cursor: "pointer", padding: 0, fontSize: 9 }}>
+              <button type="button" onClick={(e) => { e.stopPropagation(); remover(i); }} style={{ position: "absolute", top: 2, right: 2, background: "rgba(0,0,0,0.6)", border: "none", borderRadius: "50%", width: 18, height: 18, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", cursor: "pointer", padding: 0, fontSize: 9 }}>
                 <FaTimes />
               </button>
               {i > 0 && (
-                <button onClick={() => mover(i, i - 1)} style={{ position: "absolute", top: 2, left: 2, background: "rgba(0,0,0,0.5)", border: "none", borderRadius: "50%", width: 18, height: 18, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", cursor: "pointer", padding: 0, fontSize: 9 }}>
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); mover(i, i - 1); }}
+                  style={{ position: "absolute", top: 2, left: 2, background: "rgba(0,0,0,0.5)", border: "none", borderRadius: "50%", width: 18, height: 18, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", cursor: "pointer", padding: 0, fontSize: 9 }}
+                >
                   <FaChevronLeft />
                 </button>
               )}
@@ -172,8 +184,14 @@ function UploadFotos({ imagens, onChange }) {
           ))}
         </div>
       )}
+
       {imagens.length < MAX_IMAGES && (
-        <div onClick={() => inputRef.current?.click()} style={{ border: "2px dashed var(--border)", borderRadius: 10, padding: "18px 12px", textAlign: "center", cursor: "pointer", background: "var(--surface2)", transition: "border-color 0.2s" }} onMouseEnter={e => e.currentTarget.style.borderColor = "var(--accent)"} onMouseLeave={e => e.currentTarget.style.borderColor = "var(--border)"}>
+        <div
+          onClick={(e) => { e.stopPropagation(); inputRef.current?.click(); }}
+          style={{ border: "2px dashed var(--border)", borderRadius: 10, padding: "18px 12px", textAlign: "center", cursor: "pointer", background: "var(--surface2)", transition: "border-color 0.2s" }}
+          onMouseEnter={e => e.currentTarget.style.borderColor = "var(--accent)"}
+          onMouseLeave={e => e.currentTarget.style.borderColor = "var(--border)"}
+        >
           {processando ? (
             <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, color: "var(--muted)", fontSize: 13 }}>
               <span className="spinner" /> Processando fotos...
@@ -190,12 +208,14 @@ function UploadFotos({ imagens, onChange }) {
           )}
         </div>
       )}
+
       {erro && <div style={{ color: "var(--error)", fontSize: 12, marginTop: 6 }}>{erro}</div>}
       {imagens.length > 1 && (
         <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 6 }}>
           💡 A primeira foto será a capa do anúncio. Use as setas ‹ › para reordenar.
         </div>
       )}
+
       <input ref={inputRef} type="file" accept="image/*" multiple style={{ display: "none" }} onChange={handleFiles} />
     </div>
   );
@@ -218,39 +238,51 @@ function ModalProduto({ produto, onClose, onSalvo, toast }) {
 
   function validar() {
     const e = {};
-    if (!form.nome.trim()) e.nome = "Nome é obrigatório.";
-    if (!form.categoria) e.categoria = "Selecione uma categoria.";
+    if (!form.nome.trim())    e.nome      = "Nome é obrigatório.";
+    if (!form.categoria)      e.categoria = "Selecione uma categoria.";
     if (!form.preco || isNaN(Number(form.preco)) || Number(form.preco) < 0) e.preco = "Preço inválido.";
     if (!form.estoque || isNaN(Number(form.estoque)) || Number(form.estoque) < 0) e.estoque = "Estoque inválido.";
     return e;
   }
 
+  // Só salva quando o usuário clica em "Salvar alterações" / "Publicar à venda"
   async function salvar(e) {
     e.preventDefault();
     const errosVal = validar();
     if (Object.keys(errosVal).length) { setErros(errosVal); return; }
     setCarregando(true);
+
     const payload = {
-      nome: form.nome.trim(),
-      descricao: form.descricao.trim(),
-      preco: Number(form.preco),
-      estoque: Number(form.estoque),
-      categoria: form.categoria,
+      nome:       form.nome.trim(),
+      descricao:  form.descricao.trim(),
+      preco:      Number(form.preco),
+      estoque:    Number(form.estoque),
+      categoria:  form.categoria,
       imagem_url: form.imagens.length > 0 ? JSON.stringify(form.imagens) : "",
     };
+
     try {
-      const path = editando ? `/produtos/${produto.id}` : `/produtos`;
+      const path   = editando ? `/produtos/${produto.id}` : `/produtos`;
       const method = editando ? "PUT" : "POST";
-      const r = await apiFetch(path, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+      const r = await apiFetch(path, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
       const d = await r.json();
-      if (r.ok) { toast(editando ? "Produto atualizado!" : "Produto publicado à venda!", "success"); onSalvo(); onClose(); }
-      else toast(d.mensagem || "Erro ao salvar.", "error");
+      if (r.ok) {
+        toast(editando ? "Produto atualizado!" : "Produto publicado à venda!", "success");
+        onSalvo();
+        onClose();
+      } else {
+        toast(d.mensagem || "Erro ao salvar.", "error");
+      }
     } catch { toast("Erro de conexão.", "error"); }
     finally { setCarregando(false); }
   }
 
   return (
-    <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
+    <div className="modal-overlay">
       <div className="modal" style={{ maxWidth: 560 }}>
         <div className="modal-header">
           <span className="modal-title">{editando ? "Editar Produto" : "📦 Publicar Produto à Venda"}</span>
@@ -261,7 +293,10 @@ function ModalProduto({ produto, onClose, onSalvo, toast }) {
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
               <div className="field" style={{ gridColumn: "1/-1" }}>
                 <label>Fotos do produto</label>
-                <UploadFotos imagens={form.imagens} onChange={(imgs) => setForm(f => ({ ...f, imagens: imgs }))} />
+                <UploadFotos
+                  imagens={form.imagens}
+                  onChange={(imgs) => setForm(f => ({ ...f, imagens: imgs }))}
+                />
               </div>
               <div className="field" style={{ gridColumn: "1/-1" }}>
                 <label>Nome *</label>
@@ -273,7 +308,7 @@ function ModalProduto({ produto, onClose, onSalvo, toast }) {
                 <select value={form.categoria} onChange={e => set("categoria", e.target.value)}>
                   <option value="">Selecione...</option>
                   {CATEGORIAS_DISPONIVEIS.map(c => (
-                    <option key={c} value={c}>{ICONES[c]} {c.charAt(0).toUpperCase() + c.slice(1)}</option>
+                    <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>
                   ))}
                 </select>
                 {erros.categoria && <small style={{ color: "var(--error)", fontSize: 12 }}>{erros.categoria}</small>}
@@ -345,81 +380,268 @@ function ModalDeletar({ produto, onClose, onDeletado, toast }) {
   );
 }
 
-// ─── Card Vendedor (clicável → perfil público) ─────────────────
-function VendedorBadge({ nome, foto, usuarioId, onClick }) {
-  const initials = nome ? nome.split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase() : "?";
-  return (
-    <div
-      onClick={(e) => { e.stopPropagation(); onClick && onClick(); }}
-      style={{
-        display: "flex", alignItems: "center", gap: 6, marginTop: 6,
-        cursor: onClick ? "pointer" : "default",
-        width: "fit-content",
-      }}
-      title={onClick ? `Ver perfil de ${nome}` : undefined}
-    >
-      <div style={{
-        width: 22, height: 22, borderRadius: "50%",
-        background: "linear-gradient(135deg, var(--accent), #a855f7)",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        fontSize: 9, fontWeight: 700, color: "#fff", flexShrink: 0, overflow: "hidden",
-        border: onClick ? "1.5px solid var(--accent)" : "none",
-        transition: "opacity 0.15s",
-      }}>
-        {foto
-          ? <img src={foto} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { e.target.style.display = "none"; }} />
-          : initials
+// ─── Modal Chat / Tenho Interesse ──────────────────────────────
+function ModalChat({ produto, usuarioId, onClose, toast }) {
+  const [mensagens, setMensagens] = useState([]);
+  const [texto, setTexto]         = useState("");
+  const [enviando, setEnviando]   = useState(false);
+  const [chatId, setChatId]       = useState(null);
+  const [carregando, setCarregando] = useState(true);
+  const bottomRef = useRef(null);
+
+  // Abre ou recupera o chat ao montar
+  useEffect(() => {
+    async function iniciarChat() {
+      try {
+        const r = await apiFetch("/chats", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ produto_id: produto.id }),
+        });
+        const d = await r.json();
+        if (r.ok) {
+          setChatId(d.chat.id);
+          setMensagens(d.mensagens || []);
+        } else {
+          toast(d.mensagem || "Erro ao abrir chat.", "error");
+          onClose();
         }
+      } catch {
+        toast("Erro de conexão.", "error");
+        onClose();
+      } finally {
+        setCarregando(false);
+      }
+    }
+    iniciarChat();
+  }, [produto.id]);
+
+  // Scroll para o fim sempre que chegarem novas mensagens
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [mensagens]);
+
+  // Polling simples a cada 3 segundos
+  useEffect(() => {
+    if (!chatId) return;
+    const interval = setInterval(async () => {
+      try {
+        const r = await apiFetch(`/chats/${chatId}/mensagens`);
+        const d = await r.json();
+        if (r.ok) setMensagens(d.mensagens || []);
+      } catch {}
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [chatId]);
+
+  async function enviar() {
+    if (!texto.trim() || !chatId) return;
+    setEnviando(true);
+    try {
+      const r = await apiFetch(`/chats/${chatId}/mensagens`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ texto: texto.trim() }),
+      });
+      const d = await r.json();
+      if (r.ok) {
+        setMensagens(prev => [...prev, d.mensagem]);
+        setTexto("");
+      } else {
+        toast(d.mensagem || "Erro ao enviar.", "error");
+      }
+    } catch { toast("Erro de conexão.", "error"); }
+    finally { setEnviando(false); }
+  }
+
+  function handleKey(e) {
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); enviar(); }
+  }
+
+  return (
+    <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="modal" style={{ maxWidth: 480, display: "flex", flexDirection: "column", height: 520 }}>
+        <div className="modal-header">
+          <span className="modal-title">💬 Conversa sobre: {produto.nome}</span>
+          <button className="modal-close" onClick={onClose}>×</button>
+        </div>
+
+        {/* Vendedor info */}
+        <div style={{ padding: "8px 20px", borderBottom: "1px solid var(--border)", fontSize: 12, color: "var(--muted)", display: "flex", alignItems: "center", gap: 6 }}>
+          <span>Vendedor:</span>
+          <strong style={{ color: "var(--text)" }}>{produto.vendedor_nome || "—"}</strong>
+        </div>
+
+        {/* Mensagens */}
+        <div style={{ flex: 1, overflowY: "auto", padding: "14px 20px", display: "flex", flexDirection: "column", gap: 8 }}>
+          {carregando ? (
+            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}>
+              <span className="spinner" /> &nbsp; Carregando...
+            </div>
+          ) : mensagens.length === 0 ? (
+            <div style={{ textAlign: "center", color: "var(--muted)", fontSize: 13, marginTop: 40 }}>
+              👋 Inicie a conversa! Pergunte sobre o produto.
+            </div>
+          ) : (
+            mensagens.map((msg, i) => {
+              const minha = msg.remetente_id === usuarioId;
+              return (
+                <div key={i} style={{ display: "flex", justifyContent: minha ? "flex-end" : "flex-start" }}>
+                  <div style={{
+                    maxWidth: "72%",
+                    background: minha ? "var(--accent)" : "var(--surface2)",
+                    color: minha ? "#fff" : "var(--text)",
+                    borderRadius: minha ? "14px 14px 4px 14px" : "14px 14px 14px 4px",
+                    padding: "8px 12px",
+                    fontSize: 13,
+                    lineHeight: 1.4,
+                  }}>
+                    {!minha && (
+                      <div style={{ fontSize: 10, fontWeight: 700, marginBottom: 3, color: "var(--accent)" }}>
+                        {msg.remetente_nome}
+                      </div>
+                    )}
+                    {msg.texto}
+                    <div style={{ fontSize: 10, opacity: 0.65, marginTop: 3, textAlign: "right" }}>
+                      {new Date(msg.criado_em).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          )}
+          <div ref={bottomRef} />
+        </div>
+
+        {/* Input */}
+        <div style={{ padding: "12px 16px", borderTop: "1px solid var(--border)", display: "flex", gap: 8 }}>
+          <textarea
+            value={texto}
+            onChange={e => setTexto(e.target.value)}
+            onKeyDown={handleKey}
+            placeholder="Digite sua mensagem..."
+            rows={2}
+            style={{
+              flex: 1, resize: "none", borderRadius: 10, border: "1px solid var(--border)",
+              padding: "8px 12px", fontSize: 13, background: "var(--surface2)", color: "var(--text)",
+              fontFamily: "inherit", outline: "none",
+            }}
+          />
+          <button
+            onClick={enviar}
+            disabled={enviando || !texto.trim()}
+            style={{
+              background: "var(--accent)", border: "none", borderRadius: 10,
+              padding: "0 16px", color: "#fff", cursor: "pointer", fontWeight: 600,
+              fontSize: 13, display: "flex", alignItems: "center", gap: 6,
+              opacity: enviando || !texto.trim() ? 0.5 : 1,
+            }}
+          >
+            {enviando ? <span className="spinner" /> : "Enviar"}
+          </button>
+        </div>
       </div>
-      <span style={{
-        fontSize: 11, color: "var(--accent)",
-        textDecoration: onClick ? "underline" : "none",
-        textDecorationStyle: "dotted",
-        fontWeight: onClick ? 600 : 400,
-      }}>
-        {nome || "Vendedor"}
-      </span>
     </div>
   );
 }
 
-// ─── Descrição expansível ──────────────────────────────────────
-function DescricaoExpansivel({ descricao, expandido, onToggle }) {
-  if (!descricao) return (
-    <div style={{ fontSize: 12, color: "var(--muted)", fontStyle: "italic", opacity: 0.5, marginBottom: 6 }}>
-      Sem descrição.
-    </div>
-  );
+// ─── Botão "Todos" com dropdown de categorias ──────────────────
+// CORREÇÃO 2: "Todos" vira botão que abre dropdown com checkboxes de categoria + botão OK verde.
+// Ao clicar em OK aplica o filtro. Para remover, clica no botão e desmarca tudo + OK.
+function FiltroCategoria({ categorias, categoriaSel, onAplicar }) {
+  const [aberto, setAberto]           = useState(false);
+  const [selecionadas, setSelecionadas] = useState(categoriaSel);
+  const ref = useRef(null);
+
+  // Sincroniza quando o pai limpa filtros
+  useEffect(() => { setSelecionadas(categoriaSel); }, [categoriaSel]);
+
+  function toggle(cat) {
+    setSelecionadas(prev => prev.includes(cat) ? prev.filter(c => c !== cat) : [...prev, cat]);
+  }
+
+  function aplicar() {
+    onAplicar(selecionadas);
+    setAberto(false);
+  }
+
+  function abrirDropdown() {
+    setSelecionadas(categoriaSel); // reseta para o estado atual ao abrir
+    setAberto(v => !v);
+  }
+
+  const temFiltro = categoriaSel.length > 0;
 
   return (
-    <div style={{ marginBottom: 6 }}>
-      {/* Texto sempre aparece, mas colapsado mostra só uma linha e esmaecido */}
-      <div style={{
-        fontSize: 12,
-        color: "var(--muted)",
-        opacity: expandido ? 1 : 0.45,
-        maxHeight: expandido ? 200 : "1.4em",
-        overflow: "hidden",
-        transition: "max-height 0.3s ease, opacity 0.3s ease",
-        lineHeight: "1.4em",
-        whiteSpace: expandido ? "pre-wrap" : "nowrap",
-        textOverflow: expandido ? "unset" : "ellipsis",
-      }}>
-        {descricao}
-      </div>
-
-      {/* Botão de expansão */}
+    <div ref={ref} style={{ position: "relative", display: "inline-block" }}>
       <button
-        onClick={(e) => { e.stopPropagation(); onToggle(); }}
+        onClick={abrirDropdown}
         style={{
-          display: "flex", alignItems: "center", gap: 3,
-          background: "none", border: "none", padding: "2px 0",
-          color: "var(--accent)", fontSize: 11, cursor: "pointer",
-          fontWeight: 600, marginTop: 2,
+          display: "flex", alignItems: "center", gap: 6,
+          padding: "6px 14px", borderRadius: 20, border: "none", cursor: "pointer",
+          fontWeight: 600, fontSize: 13, transition: "all 0.2s",
+          background: temFiltro ? "var(--accent)" : "var(--surface2)",
+          color: temFiltro ? "#fff" : "var(--text)",
+          boxShadow: temFiltro ? "0 2px 8px rgba(99,102,241,0.3)" : "none",
         }}
       >
-        {expandido ? <><FaChevronUp style={{ fontSize: 9 }} /> Ocultar</> : <><FaChevronDown style={{ fontSize: 9 }} /> Ver detalhes</>}
+        {temFiltro ? `Categorias (${categoriaSel.length})` : "Todos"}
+        <FaChevronDown style={{ fontSize: 10, transition: "transform 0.2s", transform: aberto ? "rotate(180deg)" : "none" }} />
       </button>
+
+      {aberto && (
+        <div style={{
+          position: "absolute", top: "calc(100% + 6px)", left: 0, zIndex: 100,
+          background: "var(--surface)", border: "1px solid var(--border)",
+          borderRadius: 12, padding: "12px", boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
+          minWidth: 200,
+        }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "var(--muted)", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+            Filtrar por categoria
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 4, marginBottom: 12 }}>
+            {categorias.map(cat => (
+              <label key={cat} style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", padding: "4px 6px", borderRadius: 8, transition: "background 0.15s", fontSize: 13 }}
+                onMouseEnter={e => e.currentTarget.style.background = "var(--surface2)"}
+                onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+              >
+                <input
+                  type="checkbox"
+                  checked={selecionadas.includes(cat)}
+                  onChange={() => toggle(cat)}
+                  style={{ accentColor: "var(--accent)", width: 15, height: 15 }}
+                />
+                <span>{ICONES[cat] || "📦"} {cat.charAt(0).toUpperCase() + cat.slice(1)}</span>
+              </label>
+            ))}
+          </div>
+          <button
+            onClick={aplicar}
+            style={{
+              width: "100%", padding: "8px 0", borderRadius: 8, border: "none",
+              background: "#4ade80", color: "#14532d", fontWeight: 700, fontSize: 13,
+              cursor: "pointer", transition: "background 0.2s",
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = "#86efac"}
+            onMouseLeave={e => e.currentTarget.style.background = "#4ade80"}
+          >
+            ✓ OK
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── Card Vendedor ─────────────────────────────────────────────
+function VendedorBadge({ nome, foto }) {
+  const initials = nome ? nome.split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase() : "?";
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 6 }}>
+      <div style={{ width: 22, height: 22, borderRadius: "50%", background: "linear-gradient(135deg, var(--accent), #a855f7)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 700, color: "#fff", flexShrink: 0, overflow: "hidden" }}>
+        {foto ? <img src={foto} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { e.target.style.display = "none"; }} /> : initials}
+      </div>
+      <span style={{ fontSize: 11, color: "var(--muted)" }}>{nome || "Vendedor"}</span>
     </div>
   );
 }
@@ -436,22 +658,14 @@ function Produtos() {
   const [modalNovo, setModalNovo]       = useState(false);
   const [editando, setEditando]         = useState(null);
   const [deletando, setDeletando]       = useState(null);
-  // Set de IDs de cards com descrição expandida
-  const [expandidos, setExpandidos]     = useState(new Set());
+  // CORREÇÃO 3: estado para o modal de chat
+  const [chatProduto, setChatProduto]   = useState(null);
 
   const navigate = useNavigate();
   const location = useLocation();
   const toast    = useToast();
 
   const meus = new URLSearchParams(location.search).get("meus") === "1";
-
-  function toggleExpandido(id) {
-    setExpandidos(prev => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
-  }
 
   useEffect(() => {
     apiFetch("/verificar")
@@ -481,6 +695,7 @@ function Produtos() {
     if (meus) params.append("meus", "1");
     if (categoriaSel.length > 0) params.append("categorias", categoriaSel.join(","));
     if (busca) params.append("busca", busca);
+
     apiFetch(`/produtos?${params}`)
       .then(r => r.json())
       .then(d => setProdutos(d.produtos || []))
@@ -496,12 +711,7 @@ function Produtos() {
   useEffect(() => {
     setCategoriaSel([]);
     setBusca("");
-    setExpandidos(new Set());
   }, [meus]);
-
-  function toggleCat(cat) {
-    setCategoriaSel(prev => prev.includes(cat) ? prev.filter(c => c !== cat) : [...prev, cat]);
-  }
 
   function fmtPreco(v) {
     return Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -511,8 +721,14 @@ function Produtos() {
     return usuarioId && p.usuario_id === usuarioId;
   }
 
-  function irParaVendedor(p) {
-    navigate(`/vendedor/${p.usuario_id}`);
+  // Abre chat — se não estiver logado, redireciona para login
+  function abrirChat(produto) {
+    if (!usuarioId) {
+      toast("Faça login para conversar com o vendedor.", "error");
+      navigate("/login");
+      return;
+    }
+    setChatProduto(produto);
   }
 
   const titulo    = meus ? "Meus Produtos" : "Marketplace";
@@ -560,17 +776,14 @@ function Produtos() {
         </div>
       </div>
 
-      {/* Chips de categoria */}
+      {/* CORREÇÃO 2: botão "Todos" com dropdown de categorias */}
       {categorias.length > 0 && (
         <div className="filter-bar">
-          <div className={`chip ${categoriaSel.length === 0 ? "active" : ""}`} onClick={() => setCategoriaSel([])}>
-            Todos
-          </div>
-          {categorias.map(cat => (
-            <div key={cat} className={`chip ${categoriaSel.includes(cat) ? "active" : ""}`} onClick={() => toggleCat(cat)}>
-              {ICONES[cat] || "📦"} {cat.charAt(0).toUpperCase() + cat.slice(1)}
-            </div>
-          ))}
+          <FiltroCategoria
+            categorias={categorias}
+            categoriaSel={categoriaSel}
+            onAplicar={setCategoriaSel}
+          />
         </div>
       )}
 
@@ -602,9 +815,8 @@ function Produtos() {
       ) : view === "grid" ? (
         <div className="prod-grid">
           {produtos.map(p => {
-            const meu      = ehMeuProduto(p);
-            const imagens  = parsearImagens(p.imagem_url);
-            const expanded = expandidos.has(p.id);
+            const meu     = ehMeuProduto(p);
+            const imagens = parsearImagens(p.imagem_url);
             return (
               <div key={p.id} className="prod-card" style={meu ? { outline: "2px solid var(--accent)", outlineOffset: 2 } : {}}>
                 {meu && (
@@ -612,38 +824,14 @@ function Produtos() {
                     SEU
                   </div>
                 )}
-
-                {/* Clique na imagem → perfil do vendedor (se não for produto seu) */}
-                <div
-                  className="prod-thumb"
-                  style={{ padding: 0, overflow: "hidden", cursor: !meu ? "pointer" : "default" }}
-                  onClick={() => { if (!meu) irParaVendedor(p); }}
-                  title={!meu ? `Ver perfil de ${p.vendedor_nome}` : undefined}
-                >
+                <div className="prod-thumb" style={{ padding: 0, overflow: "hidden" }}>
                   <Carrossel imagens={imagens} fallback={ICONES[p.categoria] || "📦"} altura="100%" />
                 </div>
-
                 <div className="prod-body">
                   <div className="prod-cat">{ICONES[p.categoria] || "📦"} {p.categoria}</div>
                   <div className="prod-name">{p.nome}</div>
-
-                  {/* Descrição expansível */}
-                  <DescricaoExpansivel
-                    descricao={p.descricao}
-                    expandido={expanded}
-                    onToggle={() => toggleExpandido(p.id)}
-                  />
-
-                  {/* Vendedor como link (só no marketplace) */}
-                  {!meus && (
-                    <VendedorBadge
-                      nome={p.vendedor_nome}
-                      foto={p.vendedor_foto}
-                      usuarioId={p.usuario_id}
-                      onClick={!meu ? () => irParaVendedor(p) : null}
-                    />
-                  )}
-
+                  <div className="prod-desc">{p.descricao || "Sem descrição."}</div>
+                  {!meus && <VendedorBadge nome={p.vendedor_nome} foto={p.vendedor_foto} />}
                   <div className="prod-foot">
                     <span className="prod-price">{fmtPreco(p.preco)}</span>
                     <span className={`badge ${p.estoque > 0 ? "badge-green" : "badge-red"}`}>
@@ -658,8 +846,15 @@ function Produtos() {
                     <button className="btn btn-danger btn-sm" style={{ flex: 1 }} onClick={() => setDeletando(p)}><FaTrash /> Remover</button>
                   </div>
                 ) : (
+                  // CORREÇÃO 3: botão "Tenho Interesse" no lugar de "Comprar"
                   <div className="prod-card-actions">
-                    <button className="btn btn-primary btn-sm" style={{ flex: 1 }}>🛒 Comprar</button>
+                    <button
+                      className="btn btn-sm"
+                      style={{ flex: 1, background: "#4ade80", color: "#14532d", border: "none", fontWeight: 700 }}
+                      onClick={() => abrirChat(p)}
+                    >
+                      <FaCommentDots /> Tenho Interesse
+                    </button>
                   </div>
                 )}
               </div>
@@ -667,7 +862,6 @@ function Produtos() {
           })}
         </div>
       ) : (
-        // Vista de lista (tabela)
         <div className="table-wrap">
           <table className="data-table">
             <thead>
@@ -683,32 +877,21 @@ function Produtos() {
             </thead>
             <tbody>
               {produtos.map(p => {
-                const meu      = ehMeuProduto(p);
-                const imagens  = parsearImagens(p.imagem_url);
-                const expanded = expandidos.has(p.id);
+                const meu     = ehMeuProduto(p);
+                const imagens = parsearImagens(p.imagem_url);
                 return (
                   <tr key={p.id} style={meu ? { background: "rgba(99,102,241,0.04)" } : {}}>
                     <td>
-                      <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
-                        {/* Thumbnail clicável → perfil vendedor */}
-                        <div
-                          style={{ width: 42, height: 42, borderRadius: 8, flexShrink: 0, overflow: "hidden", background: "var(--surface2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, cursor: !meu ? "pointer" : "default" }}
-                          onClick={() => { if (!meu) irParaVendedor(p); }}
-                          title={!meu ? `Ver perfil de ${p.vendedor_nome}` : undefined}
-                        >
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <div style={{ width: 42, height: 42, borderRadius: 8, flexShrink: 0, overflow: "hidden", background: "var(--surface2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>
                           <Carrossel imagens={imagens} fallback={ICONES[p.categoria] || "📦"} altura="42px" />
                         </div>
-                        <div style={{ flex: 1 }}>
+                        <div>
                           <div style={{ fontWeight: 600, fontSize: 13 }}>
                             {p.nome}
                             {meu && <span style={{ marginLeft: 6, fontSize: 10, background: "var(--accent)", color: "#fff", borderRadius: 3, padding: "1px 5px" }}>SEU</span>}
                           </div>
-                          {/* Descrição expansível na lista */}
-                          <DescricaoExpansivel
-                            descricao={p.descricao}
-                            expandido={expanded}
-                            onToggle={() => toggleExpandido(p.id)}
-                          />
+                          <div style={{ fontSize: 11, color: "var(--muted)", maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.descricao}</div>
                         </div>
                       </div>
                     </td>
@@ -719,16 +902,7 @@ function Produtos() {
                     </td>
                     <td style={{ fontWeight: 700, color: "var(--accent)", fontFamily: "'DM Serif Display', serif" }}>{fmtPreco(p.preco)}</td>
                     <td>{p.estoque}</td>
-                    {!meus && (
-                      <td>
-                        <VendedorBadge
-                          nome={p.vendedor_nome}
-                          foto={p.vendedor_foto}
-                          usuarioId={p.usuario_id}
-                          onClick={!meu ? () => irParaVendedor(p) : null}
-                        />
-                      </td>
-                    )}
+                    {!meus && <td><VendedorBadge nome={p.vendedor_nome} foto={p.vendedor_foto} /></td>}
                     <td>
                       <span className={`badge ${p.estoque > 0 ? "badge-green" : "badge-red"}`}>
                         {p.estoque > 0 ? "Disponível" : "Indisponível"}
@@ -741,7 +915,14 @@ function Produtos() {
                           <button className="btn btn-danger btn-sm btn-icon" onClick={() => setDeletando(p)} title="Remover"><FaTrash /></button>
                         </div>
                       ) : (
-                        <button className="btn btn-primary btn-sm" style={{ width: "auto" }}>🛒 Comprar</button>
+                        // CORREÇÃO 3: botão "Tenho Interesse" na lista também
+                        <button
+                          className="btn btn-sm"
+                          style={{ width: "auto", background: "#4ade80", color: "#14532d", border: "none", fontWeight: 700 }}
+                          onClick={() => abrirChat(p)}
+                        >
+                          <FaCommentDots /> Tenho Interesse
+                        </button>
                       )}
                     </td>
                   </tr>
@@ -753,9 +934,19 @@ function Produtos() {
       )}
 
       {/* Modais */}
-      {modalNovo && <ModalProduto produto={null} onClose={() => setModalNovo(false)} onSalvo={buscarProdutos} toast={toast} />}
-      {editando  && <ModalProduto produto={editando} onClose={() => setEditando(null)} onSalvo={buscarProdutos} toast={toast} />}
-      {deletando && <ModalDeletar produto={deletando} onClose={() => setDeletando(null)} onDeletado={buscarProdutos} toast={toast} />}
+      {modalNovo && (
+        <ModalProduto produto={null} onClose={() => setModalNovo(false)} onSalvo={buscarProdutos} toast={toast} />
+      )}
+      {editando && (
+        <ModalProduto produto={editando} onClose={() => setEditando(null)} onSalvo={buscarProdutos} toast={toast} />
+      )}
+      {deletando && (
+        <ModalDeletar produto={deletando} onClose={() => setDeletando(null)} onDeletado={buscarProdutos} toast={toast} />
+      )}
+      {/* CORREÇÃO 3: modal de chat */}
+      {chatProduto && (
+        <ModalChat produto={chatProduto} usuarioId={usuarioId} onClose={() => setChatProduto(null)} toast={toast} />
+      )}
     </AppLayout>
   );
 }

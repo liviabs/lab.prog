@@ -137,7 +137,6 @@ app.get("/verificar", async (req, res) => {
   try {
     const decoded = jwt.verify(token, config.JWT_SECRET);
 
-    // Busca foto_url atualizada do banco
     const r = await db.query(
       "SELECT foto_url FROM usuarios WHERE id = $1",
       [decoded.id]
@@ -196,23 +195,6 @@ app.put("/perfil", async (req, res) => {
   }
 });
 
-// ── PERFIL PÚBLICO DO VENDEDOR ────────────────────────────────
-app.get("/usuarios/:id/perfil", async (req, res) => {
-  try {
-    const r = await db.query(
-      `SELECT id, nome, foto_url, bio, telefone, telefone_verificado, criado_em
-       FROM usuarios WHERE id = $1`,
-      [req.params.id]
-    );
-    if (r.rows.length === 0)
-      return res.status(404).json({ mensagem: "Vendedor não encontrado." });
-    res.json({ perfil: r.rows[0] });
-  } catch (err) {
-    console.error("Erro ao buscar perfil do vendedor:", err.message);
-    res.status(500).json({ mensagem: "Erro ao buscar perfil." });
-  }
-});
-
 // ── ALTERAR SENHA ─────────────────────────────────────────────
 app.put("/perfil/senha", async (req, res) => {
   if (!req.usuario) return res.status(401).json({ mensagem: "Não autenticado." });
@@ -259,18 +241,17 @@ app.post("/perfil/telefone/enviar", async (req, res) => {
     return res.status(400).json({ mensagem: "Número de telefone inválido." });
 
   const codigo = gerarCodigo6();
-  const exp = new Date(Date.now() + 10 * 60 * 1000); // 10 min
+  const exp = new Date(Date.now() + 10 * 60 * 1000);
 
   try {
     await db.query(
       "UPDATE usuarios SET telefone=$1, telefone_verificado=FALSE, telefone_codigo=$2, telefone_codigo_exp=$3 WHERE id=$4",
       [telefone.trim(), codigo, exp, req.usuario.id]
     );
-    // Em produção, aqui você enviaria o SMS. Por ora, retornamos o código para demonstração.
     console.log(`[SMS SIMULADO] Código ${codigo} para ${telefone}`);
     res.json({
       mensagem: "Código enviado! (simulação: o código está no campo 'codigo' desta resposta)",
-      codigo_simulado: codigo, // remover em produção
+      codigo_simulado: codigo,
     });
   } catch (err) {
     console.error("Erro ao enviar código:", err.message);
@@ -308,14 +289,14 @@ app.post("/perfil/telefone/confirmar", async (req, res) => {
 });
 
 // ── CATEGORIAS ────────────────────────────────────────────────
-const CATEGORIAS_FIXAS = [
-  "roupas", "moveis", "automoveis", "sapatos",
-  "animais", "eletronicos", "eletrodomesticos", "esportes",
-  "comida", "outros",
-];
-
-app.get("/categorias", (req, res) => {
-  res.json({ categorias: CATEGORIAS_FIXAS });
+app.get("/categorias", async (req, res) => {
+  try {
+    const r = await db.query("SELECT DISTINCT categoria FROM produtos ORDER BY categoria");
+    res.json({ categorias: r.rows.map(r => r.categoria) });
+  } catch (err) {
+    console.error("Erro ao buscar categorias:", err.message);
+    res.status(500).json({ mensagem: "Erro ao buscar categorias." });
+  }
 });
 
 // ── LISTAR TODOS OS PRODUTOS (marketplace) ────────────────────
@@ -332,11 +313,6 @@ app.get("/produtos", async (req, res) => {
 
     if (meus === "1" && req.usuario) {
       params.push(req.usuario.id);
-      query += ` AND p.usuario_id = $${params.length}`;
-    }
-
-    if (req.query.vendedor) {
-      params.push(req.query.vendedor);
       query += ` AND p.usuario_id = $${params.length}`;
     }
 
@@ -436,7 +412,146 @@ app.delete("/produtos/:id", async (req, res) => {
   }
 });
 
-// ── Auto-migration: garante que as colunas existam ────────────
+// ── CHATS ─────────────────────────────────────────────────────
+// POST /chats — abre ou recupera um chat entre o comprador logado e o dono do produto.
+// Retorna { chat, mensagens[] }
+app.post("/chats", async (req, res) => {
+  if (!req.usuario) return res.status(401).json({ mensagem: "Não autenticado." });
+  const { produto_id } = req.body;
+  if (!produto_id) return res.status(400).json({ mensagem: "produto_id é obrigatório." });
+
+  try {
+    // Busca o produto para descobrir o vendedor
+    const prodResult = await db.query("SELECT usuario_id FROM produtos WHERE id=$1", [produto_id]);
+    if (prodResult.rows.length === 0) return res.status(404).json({ mensagem: "Produto não encontrado." });
+
+    const vendedor_id = prodResult.rows[0].usuario_id;
+    const comprador_id = req.usuario.id;
+
+    // Não pode abrir chat com si mesmo
+    if (vendedor_id === comprador_id)
+      return res.status(400).json({ mensagem: "Você não pode abrir um chat sobre seu próprio produto." });
+
+    // Verifica se já existe um chat para este par (comprador, produto)
+    let chatResult = await db.query(
+      "SELECT * FROM chats WHERE produto_id=$1 AND comprador_id=$2",
+      [produto_id, comprador_id]
+    );
+
+    let chat;
+    if (chatResult.rows.length > 0) {
+      chat = chatResult.rows[0];
+    } else {
+      // Cria novo chat
+      const novo = await db.query(
+        "INSERT INTO chats (produto_id, comprador_id, vendedor_id) VALUES ($1, $2, $3) RETURNING *",
+        [produto_id, comprador_id, vendedor_id]
+      );
+      chat = novo.rows[0];
+    }
+
+    // Busca mensagens do chat
+    const msgResult = await db.query(
+      `SELECT m.*, u.nome AS remetente_nome
+       FROM chat_mensagens m
+       JOIN usuarios u ON u.id = m.remetente_id
+       WHERE m.chat_id = $1
+       ORDER BY m.criado_em ASC`,
+      [chat.id]
+    );
+
+    res.json({ chat, mensagens: msgResult.rows });
+  } catch (err) {
+    console.error("Erro ao abrir chat:", err.message);
+    res.status(500).json({ mensagem: "Erro ao abrir chat." });
+  }
+});
+
+// GET /chats/:id/mensagens — lista mensagens de um chat (polling)
+app.get("/chats/:id/mensagens", async (req, res) => {
+  if (!req.usuario) return res.status(401).json({ mensagem: "Não autenticado." });
+  const chat_id = req.params.id;
+
+  try {
+    // Garante que o usuário é participante do chat
+    const check = await db.query(
+      "SELECT * FROM chats WHERE id=$1 AND (comprador_id=$2 OR vendedor_id=$2)",
+      [chat_id, req.usuario.id]
+    );
+    if (check.rows.length === 0) return res.status(403).json({ mensagem: "Acesso negado." });
+
+    const msgResult = await db.query(
+      `SELECT m.*, u.nome AS remetente_nome
+       FROM chat_mensagens m
+       JOIN usuarios u ON u.id = m.remetente_id
+       WHERE m.chat_id = $1
+       ORDER BY m.criado_em ASC`,
+      [chat_id]
+    );
+    res.json({ mensagens: msgResult.rows });
+  } catch (err) {
+    console.error("Erro ao listar mensagens:", err.message);
+    res.status(500).json({ mensagem: "Erro ao listar mensagens." });
+  }
+});
+
+// POST /chats/:id/mensagens — envia uma mensagem em um chat
+app.post("/chats/:id/mensagens", async (req, res) => {
+  if (!req.usuario) return res.status(401).json({ mensagem: "Não autenticado." });
+  const chat_id = req.params.id;
+  const { texto } = req.body;
+  if (!texto || !texto.trim()) return res.status(400).json({ mensagem: "Mensagem não pode ser vazia." });
+
+  try {
+    // Garante que o usuário é participante do chat
+    const check = await db.query(
+      "SELECT * FROM chats WHERE id=$1 AND (comprador_id=$2 OR vendedor_id=$2)",
+      [chat_id, req.usuario.id]
+    );
+    if (check.rows.length === 0) return res.status(403).json({ mensagem: "Acesso negado." });
+
+    const r = await db.query(
+      `INSERT INTO chat_mensagens (chat_id, remetente_id, texto)
+       VALUES ($1, $2, $3) RETURNING *`,
+      [chat_id, req.usuario.id, texto.trim()]
+    );
+
+    // Retorna a mensagem com o nome do remetente
+    const msg = { ...r.rows[0], remetente_nome: req.usuario.nome };
+    res.status(201).json({ mensagem: msg });
+  } catch (err) {
+    console.error("Erro ao enviar mensagem:", err.message);
+    res.status(500).json({ mensagem: "Erro ao enviar mensagem." });
+  }
+});
+
+// GET /chats — lista todos os chats do usuário logado (para futura página de conversas)
+app.get("/chats", async (req, res) => {
+  if (!req.usuario) return res.status(401).json({ mensagem: "Não autenticado." });
+  try {
+    const r = await db.query(
+      `SELECT c.*,
+              p.nome AS produto_nome,
+              comprador.nome AS comprador_nome,
+              vendedor.nome  AS vendedor_nome,
+              (SELECT texto FROM chat_mensagens m WHERE m.chat_id = c.id ORDER BY m.criado_em DESC LIMIT 1) AS ultima_mensagem,
+              (SELECT criado_em FROM chat_mensagens m WHERE m.chat_id = c.id ORDER BY m.criado_em DESC LIMIT 1) AS ultima_mensagem_em
+       FROM chats c
+       JOIN produtos  p         ON p.id = c.produto_id
+       JOIN usuarios  comprador ON comprador.id = c.comprador_id
+       JOIN usuarios  vendedor  ON vendedor.id  = c.vendedor_id
+       WHERE c.comprador_id=$1 OR c.vendedor_id=$1
+       ORDER BY ultima_mensagem_em DESC NULLS LAST`,
+      [req.usuario.id]
+    );
+    res.json({ chats: r.rows });
+  } catch (err) {
+    console.error("Erro ao listar chats:", err.message);
+    res.status(500).json({ mensagem: "Erro ao listar chats." });
+  }
+});
+
+// ── Auto-migration: garante que as colunas e tabelas existam ──
 async function runMigration() {
   const stmts = [
     `ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS telefone            VARCHAR(20)  DEFAULT ''`,
@@ -446,6 +561,23 @@ async function runMigration() {
     `ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS foto_url            TEXT         DEFAULT ''`,
     `ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS bio                 TEXT         DEFAULT ''`,
     `ALTER TABLE produtos  ADD COLUMN IF NOT EXISTS usuario_id INTEGER REFERENCES usuarios(id) ON DELETE CASCADE`,
+    // Tabelas de chat
+    `CREATE TABLE IF NOT EXISTS chats (
+      id           SERIAL PRIMARY KEY,
+      produto_id   INTEGER NOT NULL REFERENCES produtos(id) ON DELETE CASCADE,
+      comprador_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+      vendedor_id  INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+      criado_em    TIMESTAMP DEFAULT NOW(),
+      UNIQUE (produto_id, comprador_id)
+    )`,
+    `CREATE TABLE IF NOT EXISTS chat_mensagens (
+      id           SERIAL PRIMARY KEY,
+      chat_id      INTEGER NOT NULL REFERENCES chats(id) ON DELETE CASCADE,
+      remetente_id INTEGER NOT NULL REFERENCES usuarios(id) ON DELETE CASCADE,
+      texto        TEXT    NOT NULL,
+      criado_em    TIMESTAMP DEFAULT NOW()
+    )`,
+    `CREATE INDEX IF NOT EXISTS idx_chat_mensagens_chat_id ON chat_mensagens(chat_id)`,
   ];
   for (const sql of stmts) {
     try { await db.query(sql); } catch (e) { console.warn("Migration aviso:", e.message); }
