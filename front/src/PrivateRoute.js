@@ -6,7 +6,6 @@ function PrivateRoute({ children }) {
   const [autorizado, setAutorizado] = useState(null);
   const navigate = useNavigate();
 
-  // Verificação inicial ao entrar na página
   useEffect(() => {
     apiFetch("/verificar")
       .then(r => r.json())

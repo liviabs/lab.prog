@@ -10,7 +10,6 @@ function BemVindo() {
   const [statsMeus, setStatsMeus] = useState({ total: 0, semEstoque: 0, totalValor: 0 });
   const navigate = useNavigate();
 
-  // Só busca os dados do usuário — proteção e polling estão no PrivateRoute
   useEffect(() => {
     apiFetch("/verificar")
       .then(r => r.json())

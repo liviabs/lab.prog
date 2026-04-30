@@ -35,7 +35,7 @@ app.use(cookieParser());
 // ── Rate limiting ─────────────────────────────────────────────
 const limiterAuth = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 2,
+  max: 20,
   message: { mensagem: "Muitas tentativas. Tente novamente em 15 minutos." },
   standardHeaders: true,
   legacyHeaders: false,
@@ -196,6 +196,23 @@ app.put("/perfil", async (req, res) => {
   }
 });
 
+// ── PERFIL PÚBLICO DO VENDEDOR ────────────────────────────────
+app.get("/usuarios/:id/perfil", async (req, res) => {
+  try {
+    const r = await db.query(
+      `SELECT id, nome, foto_url, bio, telefone, telefone_verificado, criado_em
+       FROM usuarios WHERE id = $1`,
+      [req.params.id]
+    );
+    if (r.rows.length === 0)
+      return res.status(404).json({ mensagem: "Vendedor não encontrado." });
+    res.json({ perfil: r.rows[0] });
+  } catch (err) {
+    console.error("Erro ao buscar perfil do vendedor:", err.message);
+    res.status(500).json({ mensagem: "Erro ao buscar perfil." });
+  }
+});
+
 // ── ALTERAR SENHA ─────────────────────────────────────────────
 app.put("/perfil/senha", async (req, res) => {
   if (!req.usuario) return res.status(401).json({ mensagem: "Não autenticado." });
@@ -291,14 +308,14 @@ app.post("/perfil/telefone/confirmar", async (req, res) => {
 });
 
 // ── CATEGORIAS ────────────────────────────────────────────────
-app.get("/categorias", async (req, res) => {
-  try {
-    const r = await db.query("SELECT DISTINCT categoria FROM produtos ORDER BY categoria");
-    res.json({ categorias: r.rows.map(r => r.categoria) });
-  } catch (err) {
-    console.error("Erro ao buscar categorias:", err.message);
-    res.status(500).json({ mensagem: "Erro ao buscar categorias." });
-  }
+const CATEGORIAS_FIXAS = [
+  "roupas", "moveis", "automoveis", "sapatos",
+  "animais", "eletronicos", "eletrodomesticos", "esportes",
+  "comida", "outros",
+];
+
+app.get("/categorias", (req, res) => {
+  res.json({ categorias: CATEGORIAS_FIXAS });
 });
 
 // ── LISTAR TODOS OS PRODUTOS (marketplace) ────────────────────
@@ -315,6 +332,11 @@ app.get("/produtos", async (req, res) => {
 
     if (meus === "1" && req.usuario) {
       params.push(req.usuario.id);
+      query += ` AND p.usuario_id = $${params.length}`;
+    }
+
+    if (req.query.vendedor) {
+      params.push(req.query.vendedor);
       query += ` AND p.usuario_id = $${params.length}`;
     }
 

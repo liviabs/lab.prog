@@ -3,40 +3,42 @@ import { useNavigate, useLocation } from "react-router-dom";
 import {
   FaPlus, FaSearch, FaEdit, FaTrash, FaTh, FaList,
   FaTimes, FaBoxOpen, FaStore, FaBox, FaChevronLeft, FaChevronRight,
-  FaCloudUploadAlt
+  FaCloudUploadAlt, FaChevronDown, FaChevronUp
 } from "react-icons/fa";
 import AppLayout from "../../AppLayout";
 import { useToast } from "../../ToastContext";
 import { apiFetch } from "../../api";
- 
+
 const ICONES = {
   roupas: "👕", moveis: "🛋️", automoveis: "🚗", sapatos: "👟",
   animais: "🐾", eletronicos: "💻", eletrodomesticos: "🏠", esportes: "🚴",
+  comida: "🍔", outros: "📦",
 };
- 
+
 const BADGE_CAT = {
   roupas: "badge-pink", moveis: "badge-blue", automoveis: "badge-orange",
   sapatos: "badge-pink", animais: "badge-green", eletronicos: "badge-blue",
   eletrodomesticos: "badge-gray", esportes: "badge-green",
+  comida: "badge-orange", outros: "badge-gray",
 };
- 
+
 const CATEGORIAS_DISPONIVEIS = [
   "roupas", "moveis", "automoveis", "sapatos",
   "animais", "eletronicos", "eletrodomesticos", "esportes",
+  "comida", "outros",
 ];
- 
+
 const PRODUTO_VAZIO = {
   nome: "", descricao: "", preco: "", estoque: "", categoria: "",
-  imagens: [], // array de base64
+  imagens: [],
 };
- 
+
 const MAX_FILE_SIZE_MB = 5;
 const MAX_IMAGES = 6;
-const RESIZE_MAX_PX = 900; // máximo de pixels por lado após resize
- 
+const RESIZE_MAX_PX = 900;
+
 // ─── Helpers de imagem ─────────────────────────────────────────
- 
-/** Lê imagem_url do banco e sempre retorna array */
+
 function parsearImagens(imagem_url) {
   if (!imagem_url) return [];
   try {
@@ -45,8 +47,7 @@ function parsearImagens(imagem_url) {
   } catch (_) {}
   return imagem_url ? [imagem_url] : [];
 }
- 
-/** Redimensiona e comprime um File para base64 via canvas */
+
 function redimensionarImagem(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -71,14 +72,13 @@ function redimensionarImagem(file) {
     reader.readAsDataURL(file);
   });
 }
- 
+
 // ─── Carrossel de Imagens ──────────────────────────────────────
 function Carrossel({ imagens, fallback, altura = "100%", estilo = {} }) {
   const [idx, setIdx] = useState(0);
- 
-  // reset se as imagens mudarem
+
   useEffect(() => { setIdx(0); }, [imagens]);
- 
+
   if (!imagens || imagens.length === 0) {
     return (
       <div style={{ width: "100%", height: altura, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32, ...estilo }}>
@@ -86,10 +86,10 @@ function Carrossel({ imagens, fallback, altura = "100%", estilo = {} }) {
       </div>
     );
   }
- 
+
   const prev = (e) => { e.stopPropagation(); setIdx(i => (i - 1 + imagens.length) % imagens.length); };
   const next = (e) => { e.stopPropagation(); setIdx(i => (i + 1) % imagens.length); };
- 
+
   return (
     <div style={{ position: "relative", width: "100%", height: altura, overflow: "hidden", userSelect: "none", ...estilo }}>
       <img
@@ -97,62 +97,20 @@ function Carrossel({ imagens, fallback, altura = "100%", estilo = {} }) {
         alt=""
         style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
       />
- 
       {imagens.length > 1 && (
         <>
-          {/* Botão Esquerda */}
-          <button
-            onClick={prev}
-            style={{
-              position: "absolute", left: 4, top: "50%", transform: "translateY(-50%)",
-              background: "rgba(0,0,0,0.45)", border: "none", borderRadius: "50%",
-              width: 26, height: 26, display: "flex", alignItems: "center", justifyContent: "center",
-              color: "#fff", cursor: "pointer", padding: 0, fontSize: 11, zIndex: 2,
-              backdropFilter: "blur(4px)",
-            }}
-          >
+          <button onClick={prev} style={{ position: "absolute", left: 4, top: "50%", transform: "translateY(-50%)", background: "rgba(0,0,0,0.45)", border: "none", borderRadius: "50%", width: 26, height: 26, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", cursor: "pointer", padding: 0, fontSize: 11, zIndex: 2, backdropFilter: "blur(4px)" }}>
             <FaChevronLeft />
           </button>
- 
-          {/* Botão Direita */}
-          <button
-            onClick={next}
-            style={{
-              position: "absolute", right: 4, top: "50%", transform: "translateY(-50%)",
-              background: "rgba(0,0,0,0.45)", border: "none", borderRadius: "50%",
-              width: 26, height: 26, display: "flex", alignItems: "center", justifyContent: "center",
-              color: "#fff", cursor: "pointer", padding: 0, fontSize: 11, zIndex: 2,
-              backdropFilter: "blur(4px)",
-            }}
-          >
+          <button onClick={next} style={{ position: "absolute", right: 4, top: "50%", transform: "translateY(-50%)", background: "rgba(0,0,0,0.45)", border: "none", borderRadius: "50%", width: 26, height: 26, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", cursor: "pointer", padding: 0, fontSize: 11, zIndex: 2, backdropFilter: "blur(4px)" }}>
             <FaChevronRight />
           </button>
- 
-          {/* Indicador de página */}
-          <div style={{
-            position: "absolute", bottom: 5, left: "50%", transform: "translateX(-50%)",
-            display: "flex", gap: 4, zIndex: 2,
-          }}>
+          <div style={{ position: "absolute", bottom: 5, left: "50%", transform: "translateX(-50%)", display: "flex", gap: 4, zIndex: 2 }}>
             {imagens.map((_, i) => (
-              <div
-                key={i}
-                onClick={(e) => { e.stopPropagation(); setIdx(i); }}
-                style={{
-                  width: i === idx ? 14 : 6, height: 6, borderRadius: 3,
-                  background: i === idx ? "#fff" : "rgba(255,255,255,0.5)",
-                  cursor: "pointer", transition: "all 0.2s",
-                }}
-              />
+              <div key={i} onClick={(e) => { e.stopPropagation(); setIdx(i); }} style={{ width: i === idx ? 14 : 6, height: 6, borderRadius: 3, background: i === idx ? "#fff" : "rgba(255,255,255,0.5)", cursor: "pointer", transition: "all 0.2s" }} />
             ))}
           </div>
- 
-          {/* Contador */}
-          <div style={{
-            position: "absolute", top: 6, right: 6,
-            background: "rgba(0,0,0,0.5)", color: "#fff",
-            fontSize: 10, borderRadius: 10, padding: "2px 7px",
-            backdropFilter: "blur(4px)", zIndex: 2,
-          }}>
+          <div style={{ position: "absolute", top: 6, right: 6, background: "rgba(0,0,0,0.5)", color: "#fff", fontSize: 10, borderRadius: 10, padding: "2px 7px", backdropFilter: "blur(4px)", zIndex: 2 }}>
             {idx + 1}/{imagens.length}
           </div>
         </>
@@ -160,95 +118,53 @@ function Carrossel({ imagens, fallback, altura = "100%", estilo = {} }) {
     </div>
   );
 }
- 
-// ─── Upload de Fotos (dentro do modal) ────────────────────────
+
+// ─── Upload de Fotos ──────────────────────────────────────────
 function UploadFotos({ imagens, onChange }) {
   const inputRef = useRef(null);
   const [processando, setProcessando] = useState(false);
   const [erro, setErro] = useState("");
- 
+
   async function handleFiles(e) {
     const arquivos = Array.from(e.target.files);
     if (!arquivos.length) return;
- 
     const slots = MAX_IMAGES - imagens.length;
-    if (slots <= 0) {
-      setErro(`Máximo de ${MAX_IMAGES} fotos atingido.`);
-      return;
-    }
- 
+    if (slots <= 0) { setErro(`Máximo de ${MAX_IMAGES} fotos atingido.`); return; }
     const selecionados = arquivos.slice(0, slots);
     const grandes = selecionados.filter(f => f.size > MAX_FILE_SIZE_MB * 1024 * 1024);
-    if (grandes.length) {
-      setErro(`Arquivos muito grandes (máx. ${MAX_FILE_SIZE_MB}MB por foto).`);
-      return;
-    }
- 
+    if (grandes.length) { setErro(`Arquivos muito grandes (máx. ${MAX_FILE_SIZE_MB}MB por foto).`); return; }
     setErro("");
     setProcessando(true);
     try {
       const novos = await Promise.all(selecionados.map(redimensionarImagem));
       onChange([...imagens, ...novos]);
-    } catch {
-      setErro("Erro ao processar imagem. Tente outro arquivo.");
-    } finally {
-      setProcessando(false);
-      // limpa o input para permitir re-selecionar o mesmo arquivo
-      if (inputRef.current) inputRef.current.value = "";
-    }
+    } catch { setErro("Erro ao processar imagem. Tente outro arquivo."); }
+    finally { setProcessando(false); if (inputRef.current) inputRef.current.value = ""; }
   }
- 
-  function remover(i) {
-    onChange(imagens.filter((_, idx) => idx !== i));
-  }
- 
+
+  function remover(i) { onChange(imagens.filter((_, idx) => idx !== i)); }
   function mover(de, para) {
     const arr = [...imagens];
     const [item] = arr.splice(de, 1);
     arr.splice(para, 0, item);
     onChange(arr);
   }
- 
+
   return (
     <div>
-      {/* Miniaturas existentes */}
       {imagens.length > 0 && (
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 10 }}>
           {imagens.map((src, i) => (
             <div key={i} style={{ position: "relative", width: 72, height: 72, borderRadius: 8, overflow: "hidden", border: i === 0 ? "2px solid var(--accent)" : "2px solid var(--border)", flexShrink: 0 }}>
               <img src={src} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
- 
-              {/* Badge "capa" na primeira foto */}
               {i === 0 && (
-                <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "var(--accent)", color: "#fff", fontSize: 9, textAlign: "center", fontWeight: 700, padding: "2px 0" }}>
-                  CAPA
-                </div>
+                <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "var(--accent)", color: "#fff", fontSize: 9, textAlign: "center", fontWeight: 700, padding: "2px 0" }}>CAPA</div>
               )}
- 
-              {/* Botão remover */}
-              <button
-                onClick={() => remover(i)}
-                style={{
-                  position: "absolute", top: 2, right: 2,
-                  background: "rgba(0,0,0,0.6)", border: "none", borderRadius: "50%",
-                  width: 18, height: 18, display: "flex", alignItems: "center", justifyContent: "center",
-                  color: "#fff", cursor: "pointer", padding: 0, fontSize: 9,
-                }}
-              >
+              <button onClick={() => remover(i)} style={{ position: "absolute", top: 2, right: 2, background: "rgba(0,0,0,0.6)", border: "none", borderRadius: "50%", width: 18, height: 18, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", cursor: "pointer", padding: 0, fontSize: 9 }}>
                 <FaTimes />
               </button>
- 
-              {/* Mover para esquerda */}
               {i > 0 && (
-                <button
-                  onClick={() => mover(i, i - 1)}
-                  style={{
-                    position: "absolute", top: 2, left: 2,
-                    background: "rgba(0,0,0,0.5)", border: "none", borderRadius: "50%",
-                    width: 18, height: 18, display: "flex", alignItems: "center", justifyContent: "center",
-                    color: "#fff", cursor: "pointer", padding: 0, fontSize: 9,
-                  }}
-                >
+                <button onClick={() => mover(i, i - 1)} style={{ position: "absolute", top: 2, left: 2, background: "rgba(0,0,0,0.5)", border: "none", borderRadius: "50%", width: 18, height: 18, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", cursor: "pointer", padding: 0, fontSize: 9 }}>
                   <FaChevronLeft />
                 </button>
               )}
@@ -256,19 +172,8 @@ function UploadFotos({ imagens, onChange }) {
           ))}
         </div>
       )}
- 
-      {/* Área de upload */}
       {imagens.length < MAX_IMAGES && (
-        <div
-          onClick={() => inputRef.current?.click()}
-          style={{
-            border: "2px dashed var(--border)", borderRadius: 10,
-            padding: "18px 12px", textAlign: "center", cursor: "pointer",
-            background: "var(--surface2)", transition: "border-color 0.2s",
-          }}
-          onMouseEnter={e => e.currentTarget.style.borderColor = "var(--accent)"}
-          onMouseLeave={e => e.currentTarget.style.borderColor = "var(--border)"}
-        >
+        <div onClick={() => inputRef.current?.click()} style={{ border: "2px dashed var(--border)", borderRadius: 10, padding: "18px 12px", textAlign: "center", cursor: "pointer", background: "var(--surface2)", transition: "border-color 0.2s" }} onMouseEnter={e => e.currentTarget.style.borderColor = "var(--accent)"} onMouseLeave={e => e.currentTarget.style.borderColor = "var(--border)"}>
           {processando ? (
             <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, color: "var(--muted)", fontSize: 13 }}>
               <span className="spinner" /> Processando fotos...
@@ -276,9 +181,7 @@ function UploadFotos({ imagens, onChange }) {
           ) : (
             <>
               <FaCloudUploadAlt style={{ fontSize: 26, color: "var(--accent)", marginBottom: 6 }} />
-              <div style={{ fontSize: 13, color: "var(--text)", fontWeight: 600 }}>
-                Clique para adicionar fotos
-              </div>
+              <div style={{ fontSize: 13, color: "var(--text)", fontWeight: 600 }}>Clique para adicionar fotos</div>
               <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 3 }}>
                 JPG, PNG, WEBP · máx. {MAX_FILE_SIZE_MB}MB por foto · até {MAX_IMAGES} fotos
                 {imagens.length > 0 && ` · ${MAX_IMAGES - imagens.length} restante(s)`}
@@ -287,86 +190,65 @@ function UploadFotos({ imagens, onChange }) {
           )}
         </div>
       )}
- 
       {erro && <div style={{ color: "var(--error)", fontSize: 12, marginTop: 6 }}>{erro}</div>}
       {imagens.length > 1 && (
         <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 6 }}>
           💡 A primeira foto será a capa do anúncio. Use as setas ‹ › para reordenar.
         </div>
       )}
- 
-      <input
-        ref={inputRef}
-        type="file"
-        accept="image/*"
-        multiple
-        style={{ display: "none" }}
-        onChange={handleFiles}
-      />
+      <input ref={inputRef} type="file" accept="image/*" multiple style={{ display: "none" }} onChange={handleFiles} />
     </div>
   );
 }
- 
+
 // ─── Modal Produto ────────────────────────────────────────────
 function ModalProduto({ produto, onClose, onSalvo, toast }) {
   const [form, setForm] = useState(() => ({
     ...(produto || PRODUTO_VAZIO),
     imagens: parsearImagens(produto?.imagem_url),
   }));
-  const [erros, setErros]           = useState({});
+  const [erros, setErros] = useState({});
   const [carregando, setCarregando] = useState(false);
   const editando = !!produto?.id;
- 
+
   function set(campo, valor) {
     setForm(f => ({ ...f, [campo]: valor }));
     setErros(e => ({ ...e, [campo]: "" }));
   }
- 
+
   function validar() {
     const e = {};
-    if (!form.nome.trim())    e.nome      = "Nome é obrigatório.";
-    if (!form.categoria)      e.categoria = "Selecione uma categoria.";
+    if (!form.nome.trim()) e.nome = "Nome é obrigatório.";
+    if (!form.categoria) e.categoria = "Selecione uma categoria.";
     if (!form.preco || isNaN(Number(form.preco)) || Number(form.preco) < 0) e.preco = "Preço inválido.";
     if (!form.estoque || isNaN(Number(form.estoque)) || Number(form.estoque) < 0) e.estoque = "Estoque inválido.";
     return e;
   }
- 
+
   async function salvar(e) {
     e.preventDefault();
     const errosVal = validar();
     if (Object.keys(errosVal).length) { setErros(errosVal); return; }
     setCarregando(true);
- 
-    // Armazena array de base64 como JSON no campo imagem_url
     const payload = {
-      nome:       form.nome.trim(),
-      descricao:  form.descricao.trim(),
-      preco:      Number(form.preco),
-      estoque:    Number(form.estoque),
-      categoria:  form.categoria,
+      nome: form.nome.trim(),
+      descricao: form.descricao.trim(),
+      preco: Number(form.preco),
+      estoque: Number(form.estoque),
+      categoria: form.categoria,
       imagem_url: form.imagens.length > 0 ? JSON.stringify(form.imagens) : "",
     };
- 
     try {
-      const path   = editando ? `/produtos/${produto.id}` : `/produtos`;
+      const path = editando ? `/produtos/${produto.id}` : `/produtos`;
       const method = editando ? "PUT" : "POST";
-      const r = await apiFetch(path, {
-        method,
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      const r = await apiFetch(path, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
       const d = await r.json();
-      if (r.ok) {
-        toast(editando ? "Produto atualizado!" : "Produto publicado à venda!", "success");
-        onSalvo();
-        onClose();
-      } else {
-        toast(d.mensagem || "Erro ao salvar.", "error");
-      }
+      if (r.ok) { toast(editando ? "Produto atualizado!" : "Produto publicado à venda!", "success"); onSalvo(); onClose(); }
+      else toast(d.mensagem || "Erro ao salvar.", "error");
     } catch { toast("Erro de conexão.", "error"); }
     finally { setCarregando(false); }
   }
- 
+
   return (
     <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal" style={{ maxWidth: 560 }}>
@@ -377,16 +259,10 @@ function ModalProduto({ produto, onClose, onSalvo, toast }) {
         <form onSubmit={salvar}>
           <div className="modal-body">
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
- 
-              {/* Fotos */}
               <div className="field" style={{ gridColumn: "1/-1" }}>
                 <label>Fotos do produto</label>
-                <UploadFotos
-                  imagens={form.imagens}
-                  onChange={(imgs) => setForm(f => ({ ...f, imagens: imgs }))}
-                />
+                <UploadFotos imagens={form.imagens} onChange={(imgs) => setForm(f => ({ ...f, imagens: imgs }))} />
               </div>
- 
               <div className="field" style={{ gridColumn: "1/-1" }}>
                 <label>Nome *</label>
                 <input type="text" placeholder="Nome do produto" value={form.nome} onChange={e => set("nome", e.target.value)} />
@@ -397,7 +273,7 @@ function ModalProduto({ produto, onClose, onSalvo, toast }) {
                 <select value={form.categoria} onChange={e => set("categoria", e.target.value)}>
                   <option value="">Selecione...</option>
                   {CATEGORIAS_DISPONIVEIS.map(c => (
-                    <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>
+                    <option key={c} value={c}>{ICONES[c]} {c.charAt(0).toUpperCase() + c.slice(1)}</option>
                   ))}
                 </select>
                 {erros.categoria && <small style={{ color: "var(--error)", fontSize: 12 }}>{erros.categoria}</small>}
@@ -429,11 +305,11 @@ function ModalProduto({ produto, onClose, onSalvo, toast }) {
     </div>
   );
 }
- 
+
 // ─── Modal Deletar ─────────────────────────────────────────────
 function ModalDeletar({ produto, onClose, onDeletado, toast }) {
   const [carregando, setCarregando] = useState(false);
- 
+
   async function deletar() {
     setCarregando(true);
     try {
@@ -443,7 +319,7 @@ function ModalDeletar({ produto, onClose, onDeletado, toast }) {
     } catch { toast("Erro de conexão.", "error"); }
     finally { setCarregando(false); }
   }
- 
+
   return (
     <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal" style={{ maxWidth: 400 }}>
@@ -468,25 +344,86 @@ function ModalDeletar({ produto, onClose, onDeletado, toast }) {
     </div>
   );
 }
- 
-// ─── Card Vendedor ─────────────────────────────────────────────
-function VendedorBadge({ nome, foto }) {
+
+// ─── Card Vendedor (clicável → perfil público) ─────────────────
+function VendedorBadge({ nome, foto, usuarioId, onClick }) {
   const initials = nome ? nome.split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase() : "?";
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 6 }}>
+    <div
+      onClick={(e) => { e.stopPropagation(); onClick && onClick(); }}
+      style={{
+        display: "flex", alignItems: "center", gap: 6, marginTop: 6,
+        cursor: onClick ? "pointer" : "default",
+        width: "fit-content",
+      }}
+      title={onClick ? `Ver perfil de ${nome}` : undefined}
+    >
       <div style={{
         width: 22, height: 22, borderRadius: "50%",
         background: "linear-gradient(135deg, var(--accent), #a855f7)",
         display: "flex", alignItems: "center", justifyContent: "center",
-        fontSize: 9, fontWeight: 700, color: "#fff", flexShrink: 0, overflow: "hidden"
+        fontSize: 9, fontWeight: 700, color: "#fff", flexShrink: 0, overflow: "hidden",
+        border: onClick ? "1.5px solid var(--accent)" : "none",
+        transition: "opacity 0.15s",
       }}>
-        {foto ? <img src={foto} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { e.target.style.display = "none"; }} /> : initials}
+        {foto
+          ? <img src={foto} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} onError={e => { e.target.style.display = "none"; }} />
+          : initials
+        }
       </div>
-      <span style={{ fontSize: 11, color: "var(--muted)" }}>{nome || "Vendedor"}</span>
+      <span style={{
+        fontSize: 11, color: "var(--accent)",
+        textDecoration: onClick ? "underline" : "none",
+        textDecorationStyle: "dotted",
+        fontWeight: onClick ? 600 : 400,
+      }}>
+        {nome || "Vendedor"}
+      </span>
     </div>
   );
 }
- 
+
+// ─── Descrição expansível ──────────────────────────────────────
+function DescricaoExpansivel({ descricao, expandido, onToggle }) {
+  if (!descricao) return (
+    <div style={{ fontSize: 12, color: "var(--muted)", fontStyle: "italic", opacity: 0.5, marginBottom: 6 }}>
+      Sem descrição.
+    </div>
+  );
+
+  return (
+    <div style={{ marginBottom: 6 }}>
+      {/* Texto sempre aparece, mas colapsado mostra só uma linha e esmaecido */}
+      <div style={{
+        fontSize: 12,
+        color: "var(--muted)",
+        opacity: expandido ? 1 : 0.45,
+        maxHeight: expandido ? 200 : "1.4em",
+        overflow: "hidden",
+        transition: "max-height 0.3s ease, opacity 0.3s ease",
+        lineHeight: "1.4em",
+        whiteSpace: expandido ? "pre-wrap" : "nowrap",
+        textOverflow: expandido ? "unset" : "ellipsis",
+      }}>
+        {descricao}
+      </div>
+
+      {/* Botão de expansão */}
+      <button
+        onClick={(e) => { e.stopPropagation(); onToggle(); }}
+        style={{
+          display: "flex", alignItems: "center", gap: 3,
+          background: "none", border: "none", padding: "2px 0",
+          color: "var(--accent)", fontSize: 11, cursor: "pointer",
+          fontWeight: 600, marginTop: 2,
+        }}
+      >
+        {expandido ? <><FaChevronUp style={{ fontSize: 9 }} /> Ocultar</> : <><FaChevronDown style={{ fontSize: 9 }} /> Ver detalhes</>}
+      </button>
+    </div>
+  );
+}
+
 // ─── Componente Principal ──────────────────────────────────────
 function Produtos() {
   const [produtos, setProdutos]         = useState([]);
@@ -499,20 +436,30 @@ function Produtos() {
   const [modalNovo, setModalNovo]       = useState(false);
   const [editando, setEditando]         = useState(null);
   const [deletando, setDeletando]       = useState(null);
- 
+  // Set de IDs de cards com descrição expandida
+  const [expandidos, setExpandidos]     = useState(new Set());
+
   const navigate = useNavigate();
   const location = useLocation();
   const toast    = useToast();
- 
+
   const meus = new URLSearchParams(location.search).get("meus") === "1";
- 
+
+  function toggleExpandido(id) {
+    setExpandidos(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }
+
   useEffect(() => {
     apiFetch("/verificar")
       .then(r => r.json())
       .then(d => { if (d.logado) setUsuarioId(d.usuario.id); })
       .catch(() => {});
   }, []);
- 
+
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     if (params.get("novo") === "1") {
@@ -520,53 +467,57 @@ function Produtos() {
       navigate(meus ? "/produtos?meus=1" : "/produtos", { replace: true });
     }
   }, [location.search]);
- 
+
   useEffect(() => {
     apiFetch("/categorias")
       .then(r => r.json())
       .then(d => setCategorias(d.categorias || []))
       .catch(() => {});
   }, []);
- 
+
   const buscarProdutos = useCallback(() => {
     setCarregando(true);
     const params = new URLSearchParams();
     if (meus) params.append("meus", "1");
     if (categoriaSel.length > 0) params.append("categorias", categoriaSel.join(","));
     if (busca) params.append("busca", busca);
- 
     apiFetch(`/produtos?${params}`)
       .then(r => r.json())
       .then(d => setProdutos(d.produtos || []))
       .catch(() => setProdutos([]))
       .finally(() => setCarregando(false));
   }, [categoriaSel, busca, meus]);
- 
+
   useEffect(() => {
     const t = setTimeout(buscarProdutos, 300);
     return () => clearTimeout(t);
   }, [buscarProdutos]);
- 
+
   useEffect(() => {
     setCategoriaSel([]);
     setBusca("");
+    setExpandidos(new Set());
   }, [meus]);
- 
+
   function toggleCat(cat) {
     setCategoriaSel(prev => prev.includes(cat) ? prev.filter(c => c !== cat) : [...prev, cat]);
   }
- 
+
   function fmtPreco(v) {
     return Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
   }
- 
+
   function ehMeuProduto(p) {
     return usuarioId && p.usuario_id === usuarioId;
   }
- 
+
+  function irParaVendedor(p) {
+    navigate(`/vendedor/${p.usuario_id}`);
+  }
+
   const titulo    = meus ? "Meus Produtos" : "Marketplace";
   const subtitulo = meus ? "Produtos que você está vendendo" : "Todos os produtos disponíveis para compra";
- 
+
   return (
     <AppLayout title={titulo}>
       {/* Tabs */}
@@ -578,11 +529,11 @@ function Produtos() {
           <FaBox /> Meus Produtos
         </button>
       </div>
- 
+
       <div style={{ marginBottom: 16 }}>
         <div style={{ fontSize: 13, color: "var(--muted)" }}>{subtitulo}</div>
       </div>
- 
+
       {/* Barra de filtros */}
       <div className="section-header">
         <div className="topbar-search" style={{ width: 280 }}>
@@ -608,7 +559,7 @@ function Produtos() {
           </button>
         </div>
       </div>
- 
+
       {/* Chips de categoria */}
       {categorias.length > 0 && (
         <div className="filter-bar">
@@ -622,7 +573,7 @@ function Produtos() {
           ))}
         </div>
       )}
- 
+
       {/* Conteúdo */}
       {carregando ? (
         <div className="empty-state">
@@ -651,8 +602,9 @@ function Produtos() {
       ) : view === "grid" ? (
         <div className="prod-grid">
           {produtos.map(p => {
-            const meu     = ehMeuProduto(p);
-            const imagens = parsearImagens(p.imagem_url);
+            const meu      = ehMeuProduto(p);
+            const imagens  = parsearImagens(p.imagem_url);
+            const expanded = expandidos.has(p.id);
             return (
               <div key={p.id} className="prod-card" style={meu ? { outline: "2px solid var(--accent)", outlineOffset: 2 } : {}}>
                 {meu && (
@@ -660,21 +612,38 @@ function Produtos() {
                     SEU
                   </div>
                 )}
- 
-                {/* Carrossel na thumb do card */}
-                <div className="prod-thumb" style={{ padding: 0, overflow: "hidden" }}>
-                  <Carrossel
-                    imagens={imagens}
-                    fallback={ICONES[p.categoria] || "📦"}
-                    altura="100%"
-                  />
+
+                {/* Clique na imagem → perfil do vendedor (se não for produto seu) */}
+                <div
+                  className="prod-thumb"
+                  style={{ padding: 0, overflow: "hidden", cursor: !meu ? "pointer" : "default" }}
+                  onClick={() => { if (!meu) irParaVendedor(p); }}
+                  title={!meu ? `Ver perfil de ${p.vendedor_nome}` : undefined}
+                >
+                  <Carrossel imagens={imagens} fallback={ICONES[p.categoria] || "📦"} altura="100%" />
                 </div>
- 
+
                 <div className="prod-body">
                   <div className="prod-cat">{ICONES[p.categoria] || "📦"} {p.categoria}</div>
                   <div className="prod-name">{p.nome}</div>
-                  <div className="prod-desc">{p.descricao || "Sem descrição."}</div>
-                  {!meus && <VendedorBadge nome={p.vendedor_nome} foto={p.vendedor_foto} />}
+
+                  {/* Descrição expansível */}
+                  <DescricaoExpansivel
+                    descricao={p.descricao}
+                    expandido={expanded}
+                    onToggle={() => toggleExpandido(p.id)}
+                  />
+
+                  {/* Vendedor como link (só no marketplace) */}
+                  {!meus && (
+                    <VendedorBadge
+                      nome={p.vendedor_nome}
+                      foto={p.vendedor_foto}
+                      usuarioId={p.usuario_id}
+                      onClick={!meu ? () => irParaVendedor(p) : null}
+                    />
+                  )}
+
                   <div className="prod-foot">
                     <span className="prod-price">{fmtPreco(p.preco)}</span>
                     <span className={`badge ${p.estoque > 0 ? "badge-green" : "badge-red"}`}>
@@ -682,7 +651,7 @@ function Produtos() {
                     </span>
                   </div>
                 </div>
- 
+
                 {meu ? (
                   <div className="prod-card-actions">
                     <button className="btn btn-ghost btn-sm" style={{ flex: 1 }} onClick={() => setEditando(p)}><FaEdit /> Editar</button>
@@ -698,7 +667,7 @@ function Produtos() {
           })}
         </div>
       ) : (
-        // Vista de lista (tabela) — thumbnail simples com primeira foto
+        // Vista de lista (tabela)
         <div className="table-wrap">
           <table className="data-table">
             <thead>
@@ -714,26 +683,32 @@ function Produtos() {
             </thead>
             <tbody>
               {produtos.map(p => {
-                const meu     = ehMeuProduto(p);
-                const imagens = parsearImagens(p.imagem_url);
+                const meu      = ehMeuProduto(p);
+                const imagens  = parsearImagens(p.imagem_url);
+                const expanded = expandidos.has(p.id);
                 return (
                   <tr key={p.id} style={meu ? { background: "rgba(99,102,241,0.04)" } : {}}>
                     <td>
-                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        {/* Thumbnail com carrossel compacto na tabela */}
-                        <div style={{ width: 42, height: 42, borderRadius: 8, flexShrink: 0, overflow: "hidden", background: "var(--surface2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>
-                          <Carrossel
-                            imagens={imagens}
-                            fallback={ICONES[p.categoria] || "📦"}
-                            altura="42px"
-                          />
+                      <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+                        {/* Thumbnail clicável → perfil vendedor */}
+                        <div
+                          style={{ width: 42, height: 42, borderRadius: 8, flexShrink: 0, overflow: "hidden", background: "var(--surface2)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, cursor: !meu ? "pointer" : "default" }}
+                          onClick={() => { if (!meu) irParaVendedor(p); }}
+                          title={!meu ? `Ver perfil de ${p.vendedor_nome}` : undefined}
+                        >
+                          <Carrossel imagens={imagens} fallback={ICONES[p.categoria] || "📦"} altura="42px" />
                         </div>
-                        <div>
+                        <div style={{ flex: 1 }}>
                           <div style={{ fontWeight: 600, fontSize: 13 }}>
                             {p.nome}
                             {meu && <span style={{ marginLeft: 6, fontSize: 10, background: "var(--accent)", color: "#fff", borderRadius: 3, padding: "1px 5px" }}>SEU</span>}
                           </div>
-                          <div style={{ fontSize: 11, color: "var(--muted)", maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.descricao}</div>
+                          {/* Descrição expansível na lista */}
+                          <DescricaoExpansivel
+                            descricao={p.descricao}
+                            expandido={expanded}
+                            onToggle={() => toggleExpandido(p.id)}
+                          />
                         </div>
                       </div>
                     </td>
@@ -744,7 +719,16 @@ function Produtos() {
                     </td>
                     <td style={{ fontWeight: 700, color: "var(--accent)", fontFamily: "'DM Serif Display', serif" }}>{fmtPreco(p.preco)}</td>
                     <td>{p.estoque}</td>
-                    {!meus && <td><VendedorBadge nome={p.vendedor_nome} foto={p.vendedor_foto} /></td>}
+                    {!meus && (
+                      <td>
+                        <VendedorBadge
+                          nome={p.vendedor_nome}
+                          foto={p.vendedor_foto}
+                          usuarioId={p.usuario_id}
+                          onClick={!meu ? () => irParaVendedor(p) : null}
+                        />
+                      </td>
+                    )}
                     <td>
                       <span className={`badge ${p.estoque > 0 ? "badge-green" : "badge-red"}`}>
                         {p.estoque > 0 ? "Disponível" : "Indisponível"}
@@ -767,20 +751,13 @@ function Produtos() {
           </table>
         </div>
       )}
- 
+
       {/* Modais */}
-      {modalNovo && (
-        <ModalProduto produto={null} onClose={() => setModalNovo(false)} onSalvo={buscarProdutos} toast={toast} />
-      )}
-      {editando && (
-        <ModalProduto produto={editando} onClose={() => setEditando(null)} onSalvo={buscarProdutos} toast={toast} />
-      )}
-      {deletando && (
-        <ModalDeletar produto={deletando} onClose={() => setDeletando(null)} onDeletado={buscarProdutos} toast={toast} />
-      )}
+      {modalNovo && <ModalProduto produto={null} onClose={() => setModalNovo(false)} onSalvo={buscarProdutos} toast={toast} />}
+      {editando  && <ModalProduto produto={editando} onClose={() => setEditando(null)} onSalvo={buscarProdutos} toast={toast} />}
+      {deletando && <ModalDeletar produto={deletando} onClose={() => setDeletando(null)} onDeletado={buscarProdutos} toast={toast} />}
     </AppLayout>
   );
 }
- 
+
 export default Produtos;
- 

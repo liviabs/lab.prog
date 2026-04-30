@@ -5,7 +5,7 @@ import {
   FaStore, FaUser
 } from "react-icons/fa";
 import { apiFetch } from "./api";
-
+ 
  
 const NAV_ITEMS = [
   { icon: <FaTachometerAlt />, label: "Dashboard",    path: "/bemvindo" },
@@ -53,15 +53,12 @@ function AppLayout({ children, title }) {
   const location  = useLocation();
  
   useEffect(() => {
-    // Busca /perfil em vez de /verificar para ter acesso à foto_url
     apiFetch("/perfil")
       .then(r => r.json())
       .then(d => { if (d.perfil) setUsuario(d.perfil); })
       .catch(() => {});
   }, []);
  
-  // Recarregar perfil quando o usuário volta à tela
-  // (ex.: acabou de atualizar a foto na página de perfil)
   useEffect(() => {
     apiFetch("/perfil")
       .then(r => r.json())
@@ -125,7 +122,6 @@ function AppLayout({ children, title }) {
         <div className="sidebar-footer">
           {usuario && (
             <div className="user-badge">
-              {/* Avatar com foto na sidebar */}
               <Avatar
                 fotoUrl={usuario.foto_url}
                 initials={initials}
@@ -133,7 +129,6 @@ function AppLayout({ children, title }) {
                 fontSize={12}
                 style={{ cursor: "pointer" }}
               />
- 
               <div
                 className="user-info"
                 style={{ cursor: "pointer" }}
@@ -158,23 +153,7 @@ function AppLayout({ children, title }) {
             </button>
             <span className="topbar-title">{title}</span>
           </div>
-          <div className="topbar-actions">
-            {usuario && (
-              <div
-                style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 13, color: "var(--muted)", cursor: "pointer" }}
-                onClick={() => navigate("/perfil")}
-              >
-                {/* Avatar com foto na topbar */}
-                <Avatar
-                  fotoUrl={usuario.foto_url}
-                  initials={initials}
-                  size={28}
-                  fontSize={11}
-                />
-                <span style={{ fontSize: 13 }}>{usuario.nome}</span>
-              </div>
-            )}
-          </div>
+          <div className="topbar-actions"></div>
         </header>
  
         <main className="page-body">
@@ -186,4 +165,3 @@ function AppLayout({ children, title }) {
 }
  
 export default AppLayout;
- 
