@@ -56,8 +56,10 @@ function Login() {
     <div className="auth-bg">
       <div className="auth-card">
         <div className="auth-logo">
-          <div className="auth-logo-icon">🛍️</div>
-          <span className="auth-logo-text">StoreApp</span>
+          <div className="auth-logo-icon"><img src="reviva1.png" 
+            alt="Logo Reviva"className="auth-logo-icon"/>
+          </div>
+          <span className="auth-logo-text">Reviva</span>
         </div>
 
         <h1 className="auth-title">Bem-vindo de volta</h1>
