@@ -39,7 +39,7 @@ Após o login bem-sucedido, o usuário é redirecionado automaticamente para a *
 *  Redirecionamento automático após login
 *  Operações CRUD completas
 *  Integração com banco de dados PostgreSQL
-* ⚠️ Tela inicial em desenvolvimento
+*  Tela inicial em desenvolvimento
 <br><br>
 
 
