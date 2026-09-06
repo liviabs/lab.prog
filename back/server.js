@@ -586,7 +586,15 @@ async function runMigration() {
 }
 
 // ── Inicialização ─────────────────────────────────────────────
-app.listen(config.PORT, async () => {
-  console.log(`Servidor rodando em http://localhost:${config.PORT}`);
-  await runMigration();
-});
+// Só sobe o servidor de fato quando o arquivo é executado diretamente
+// (ex: `node server.js`). Quando importado por outro módulo — como nos
+// testes automatizados via supertest — apenas o `app` é exportado,
+// sem abrir porta nem rodar a migration.
+if (require.main === module) {
+  app.listen(config.PORT, async () => {
+    console.log(`Servidor rodando em http://localhost:${config.PORT}`);
+    await runMigration();
+  });
+}
+
+module.exports = app;
