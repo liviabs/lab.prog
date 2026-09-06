@@ -187,7 +187,7 @@ Reviva-main/
 
 ## 🧩 Segurança
 
-- Senhas armazenadas com hash **Bcrypt** (custo 12)
+- Senhas armazenadas com hash **Bcrypt** 
 - Comparação de senha resistente a *timing attack* mesmo quando o e-mail não existe
 - Sessão via **JWT** em cookie `httpOnly`, invalidado (`clearCookie`) sempre que o token é inválido ou expirado
 - Rate limiting nas rotas de autenticação
